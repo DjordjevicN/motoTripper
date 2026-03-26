@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Filter, SlidersHorizontal, UserRound } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
+import { mockCurrentUserId } from '@/data/users/mockUsers'
 import { formatCurrency } from '@/lib/helper'
 import type { PropertyFilters } from '@/types'
 import FilterSliderCard from './FilterSliderCard'
@@ -64,13 +66,13 @@ const HomeFilters = ({
             >
               <SlidersHorizontal className="size-5" />
             </button>
-            <button
-              type="button"
+            <Link
+              to={`/profile/${mockCurrentUserId}`}
               aria-label="Open profile"
               className="inline-flex size-11 items-center justify-center rounded-full border border-border/70 bg-card/80 text-primary shadow-sm transition-opacity hover:opacity-85"
             >
               <UserRound className="size-5" />
-            </button>
+            </Link>
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">

@@ -8,10 +8,10 @@ export const mockUser: MockUser = {
   avatar: 'https://i.pravatar.cc/160?img=14',
   preferredCurrency: 'USD',
   location: {
-    label: 'LoDo, Denver',
+    label: 'Dorcol, Belgrade',
     coordinates: {
-      lat: 39.7528,
-      lng: -104.9962,
+      lat: 44.8232,
+      lng: 20.4597,
     },
   },
 }
