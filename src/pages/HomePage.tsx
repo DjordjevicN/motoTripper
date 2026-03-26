@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import HomeFilters from '@/components/properties/HomeFilters'
 import PropertyCard from '@/components/properties/PropertyCard'
@@ -105,7 +105,7 @@ const HomePage = () => {
     )
     .filter(({ property }) =>
       advancedFilters.availableTonightOnly
-        ? property.roomAvailability.nextAvailableDate === 'Tonight'
+        ? property.availableTonight
         : true,
     )
     .sort((a, b) => {
@@ -129,6 +129,31 @@ const HomePage = () => {
 
   return (
     <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+      <section className="mb-6 rounded-[2rem] border border-amber-500/20 bg-gradient-to-r from-amber-500/12 via-background/95 to-background/95 p-6 shadow-[0_24px_70px_-40px_rgba(245,158,11,0.35)] backdrop-blur sm:p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">
+              Rider-first quick decision
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+              Need a safe stop now?
+            </h1>
+            <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
+              Jump straight into nearby stays ranked for secure motorcycle
+              parking, tonight availability, and fast decisions when the ride has
+              gone long.
+            </p>
+          </div>
+
+          <Link
+            to="/urgent-stop"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+          >
+            Open urgent stop mode
+          </Link>
+        </div>
+      </section>
+
       <section className="rounded-4xl border border-border/70 bg-card/85 p-6 shadow-[0_30px_90px_-40px_rgba(94,42,0,0.35)] backdrop-blur sm:p-8 lg:h-[calc(100vh-4rem)] lg:overflow-hidden">
         <div className="flex flex-col gap-10 lg:h-full lg:flex-row">
           <aside className="lg:w-[320px] lg:shrink-0">

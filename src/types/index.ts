@@ -3,12 +3,94 @@ export type Coordinates = {
   lng: number
 }
 
+export type TrustTier = 'unverified' | 'trusted' | 'high-trust' | 'elite'
+export type RidingStyle =
+  | 'touring'
+  | 'sport'
+  | 'adventure'
+  | 'commuter'
+  | 'mixed'
+export type ExperienceLevel =
+  | 'beginner'
+  | 'intermediate'
+  | 'experienced'
+  | 'veteran'
+export type MotorcycleType =
+  | 'sport'
+  | 'naked'
+  | 'touring'
+  | 'adventure'
+  | 'cruiser'
+  | 'scooter'
+  | 'other'
+export type TypicalTripType =
+  | 'day-rides'
+  | 'weekend-trips'
+  | 'multi-day-tours'
+  | 'mixed'
+export type PreferredStopStyle =
+  | 'budget'
+  | 'comfort'
+  | 'secure-parking-first'
+  | 'mixed'
+
+export type PropertyReview = {
+  id: string
+  propertyId: string
+  userId: string
+  rating: number
+  parkingSafetyRating: number
+  title: string
+  content: string
+  createdAt: string
+  helpfulVotes: number
+  photos?: string[]
+  safeParkingConfirmed?: boolean
+  coveredParkingConfirmed?: boolean
+  tripType: string
+}
+
+export type User = {
+  id: string
+  name: string
+  avatar?: string
+  location?: string
+  bio?: string
+  ridingStyle?: RidingStyle
+  experienceLevel?: ExperienceLevel
+  motorcycle?: {
+    brand: string
+    model: string
+    year?: number
+    type?: MotorcycleType
+    engineCc?: number
+  }
+  reviewCount: number
+  parkingConfirmationCount: number
+  photoContributionCount: number
+  helpfulVotesReceived: number
+  accountAgeDays?: number
+  trustScore: number
+  trustTier: TrustTier
+  xp?: number
+  level?: string
+  typicalTripType?: TypicalTripType
+  preferredStopStyle?: PreferredStopStyle
+  memberSince?: string
+  savedPropertyIds?: string[]
+  savedUrgentStopPropertyIds?: string[]
+  recentViewedPropertyIds?: string[]
+}
+
 export type Property = {
   id: string
   title: string
+  location: string
   locationLabel: string
   coordinates: Coordinates
   description: string
+  image: string
+  price: number
   nightlyPrice: number
   cleaningFee: number
   serviceFee: number
@@ -18,6 +100,11 @@ export type Property = {
   guests: number
   tags: string[]
   imageUrls: string[]
+  availableTonight: boolean
+  safeParkingVerified: boolean
+  coveredParking: boolean
+  riderConfirmedCount: number
+  phone: string
   roomAvailability: {
     roomsLeft: number
     nextAvailableDate: string
@@ -42,14 +129,7 @@ export type Property = {
     quantity: number
   }[]
   amenities: string[]
-  reviews: {
-    id: string
-    author: string
-    rating: number
-    title: string
-    comment: string
-    tripType: string
-  }[]
+  reviews: PropertyReview[]
 }
 
 export type MockUser = {
@@ -78,4 +158,49 @@ export type PropertySearch = {
   town: string
   guests: number
   rooms: number
+}
+
+export type UrgentStopFilters = {
+  maxDistance: number
+  maxPrice: number
+  verifiedParkingOnly: boolean
+  coveredParkingOnly: boolean
+  availableTonightOnly: boolean
+}
+
+export type UserContributionStats = {
+  totalReviews: number
+  parkingConfirmationReviews: number
+  photoBackedReviews: number
+  helpfulVotesFromReviews: number
+  activeMonths: number
+}
+
+export type UserTrustSummary = {
+  user: User
+  stats: UserContributionStats
+  trustScore: number
+  trustTier: TrustTier
+  trustLabel: string
+  badgeVariant: string
+}
+
+export type UserContributionItem = {
+  id: string
+  propertyId: string
+  propertyTitle: string
+  propertyLocation: string
+  createdAt: string
+  label: string
+  detail: string
+  priority: 'review' | 'parking' | 'photo'
+}
+
+export type UserProfileSummary = {
+  user: User
+  trustSummary: UserTrustSummary
+  recentContributions: UserContributionItem[]
+  savedProperties: Property[]
+  savedUrgentStops: Property[]
+  recentViewedProperties: Property[]
 }

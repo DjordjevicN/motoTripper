@@ -15,8 +15,11 @@ import Pill from '@/components/ui/pill'
 import Tag from '@/components/ui/tag'
 import { mockProperties } from '@/data/properties/mockProperties'
 import { mockUser } from '@/data/users/mockUser'
+import { mockUsers } from '@/data/users/mockUsers'
 import { getDistanceInKm } from '@/lib/distance'
 import { formatCurrency } from '@/lib/helper'
+import { getAllPropertyReviews } from '@/lib/reviews'
+import { getUserTrustSummary } from '@/lib/trust'
 
 const PropertyDetails = () => {
   const { propertyId } = useParams()
@@ -32,6 +35,7 @@ const PropertyDetails = () => {
     mockUser.location.coordinates,
     property.coordinates,
   )
+  const allReviews = getAllPropertyReviews(mockProperties)
 
   const totalNightlyCost =
     property.nightlyPrice + property.cleaningFee + property.serviceFee
@@ -245,23 +249,99 @@ const PropertyDetails = () => {
 
             <div className="mt-5 grid gap-4">
               {property.reviews.map((review) => (
-                <article
-                  key={review.id}
-                  className="rounded-2xl border border-border/70 bg-background/70 p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h3 className="font-medium">{review.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {review.author} · {review.tripType}
+                (() => {
+                  const trustSummary = getUserTrustSummary(
+                    review.userId,
+                    allReviews,
+                    mockUsers,
+                  )
+
+                  return (
+                    <article
+                      key={review.id}
+                      className="rounded-2xl border border-border/70 bg-background/70 p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <div>
+                            <h3 className="font-medium">{review.title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              <Link
+                                to={`/profile/${review.userId}`}
+                                className="font-medium text-foreground transition-opacity hover:opacity-80"
+                              >
+                                {trustSummary?.user.name ?? 'Unknown rider'}
+                              </Link>{' '}
+                              · {review.tripType}
+                            </p>
+                          </div>
+
+                          {trustSummary ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Link to={`/profile/${review.userId}`}>
+                                <Tag className={trustSummary.badgeVariant}>
+                                  Review by {trustSummary.trustLabel}
+                                </Tag>
+                              </Link>
+                              <span className="text-xs text-muted-foreground">
+                                Trust score {trustSummary.trustScore}
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Pill variant="secondary">{review.rating}/5</Pill>
+                          <Pill className="bg-primary/15 text-primary">
+                            Parking {review.parkingSafetyRating}/5
+                          </Pill>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {review.safeParkingConfirmed ? (
+                          <Tag className="border-emerald-500/40 bg-emerald-500/10 text-emerald-300">
+                            Safe parking confirmed
+                          </Tag>
+                        ) : null}
+                        {review.coveredParkingConfirmed ? (
+                          <Tag className="border-sky-500/40 bg-sky-500/10 text-sky-300">
+                            Covered parking confirmed
+                          </Tag>
+                        ) : null}
+                        {(review.photos?.length ?? 0) > 0 ? (
+                          <Tag className="border-amber-500/40 bg-amber-500/10 text-amber-300">
+                            {review.photos?.length} photo
+                            {review.photos?.length === 1 ? '' : 's'} attached
+                          </Tag>
+                        ) : null}
+                        <Tag>
+                          {review.helpfulVotes} helpful vote
+                          {review.helpfulVotes === 1 ? '' : 's'}
+                        </Tag>
+                      </div>
+
+                      {trustSummary ? (
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          {trustSummary.user.parkingConfirmationCount} parking
+                          confirmations · {trustSummary.user.helpfulVotesReceived}{' '}
+                          helpful votes received · member for about{' '}
+                          {Math.max(
+                            1,
+                            Math.round(
+                              (trustSummary.user.accountAgeDays ?? 0) / 30,
+                            ),
+                          )}{' '}
+                          months
+                        </p>
+                      ) : null}
+
+                      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                        {review.content}
                       </p>
-                    </div>
-                    <Pill variant="secondary">{review.rating}/5</Pill>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    {review.comment}
-                  </p>
-                </article>
+                    </article>
+                  )
+                })()
               ))}
             </div>
           </section>
