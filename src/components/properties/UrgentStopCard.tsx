@@ -9,8 +9,14 @@ import { Link } from 'react-router-dom'
 
 import Pill from '@/components/ui/pill'
 import Tag from '@/components/ui/tag'
+import { mockUsers } from '@/data/users/mockUsers'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { formatCurrency } from '@/lib/helper'
+import {
+  calculatePropertyParkingTrust,
+  getParkingBadgeVariant,
+  getParkingVerificationLabel,
+} from '@/lib/parkingTrust'
 import { cn } from '@/lib/utils'
 import type { Property } from '@/types'
 
@@ -21,6 +27,7 @@ type UrgentStopCardProps = {
 
 const UrgentStopCard = ({ property, distanceInKm }: UrgentStopCardProps) => {
   const navigateHref = `https://www.google.com/maps/dir/?api=1&destination=${property.coordinates.lat},${property.coordinates.lng}`
+  const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, mockUsers)
 
   return (
     <article className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-card/90 shadow-[0_24px_70px_-40px_rgba(15,23,42,0.5)] backdrop-blur">
@@ -32,16 +39,14 @@ const UrgentStopCard = ({ property, distanceInKm }: UrgentStopCardProps) => {
             className="h-full w-full object-cover"
           />
           <div className="absolute inset-x-4 top-4 flex flex-wrap gap-2">
-            {property.safeParkingVerified ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-amber-400/95 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-950 shadow-lg">
-                <ShieldCheck className="size-4" />
-                Safe parking verified
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-2 rounded-full bg-background/85 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-foreground backdrop-blur">
-                Parking not yet verified
-              </span>
-            )}
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] shadow-lg ${getParkingBadgeVariant(
+                parkingTrust.verificationLevel,
+              )}`}
+            >
+              <ShieldCheck className="size-4" />
+              {getParkingVerificationLabel(parkingTrust.verificationLevel)}
+            </span>
           </div>
         </div>
 
@@ -86,7 +91,7 @@ const UrgentStopCard = ({ property, distanceInKm }: UrgentStopCardProps) => {
                 Rider trust
               </p>
               <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                {property.riderConfirmedCount}
+                {parkingTrust.totalConfirmations}
               </p>
               <p className="mt-1 text-sm text-amber-100/85">
                 riders confirmed this stop works well for overnight parking
@@ -106,6 +111,7 @@ const UrgentStopCard = ({ property, distanceInKm }: UrgentStopCardProps) => {
                 <CircleParking className="size-4 text-primary" />
                 {property.coveredParking ? 'Covered option' : 'Open but usable'}
               </span>
+              <span>{parkingTrust.parkingSafetyScore}/100 parking safety score</span>
               <span>Price {formatCurrency(property.price)} / night</span>
             </div>
 

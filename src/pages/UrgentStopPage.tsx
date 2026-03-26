@@ -6,6 +6,8 @@ import UrgentStopCard from '@/components/properties/UrgentStopCard'
 import UrgentStopFilters from '@/components/properties/UrgentStopFilters'
 import { mockProperties } from '@/data/properties/mockProperties'
 import { mockUser } from '@/data/users/mockUser'
+import { mockUsers } from '@/data/users/mockUsers'
+import { calculatePropertyParkingTrust } from '@/lib/parkingTrust'
 import { rankUrgentStopProperties } from '@/lib/rankUrgentStopProperties'
 import type { Coordinates, UrgentStopFilters as UrgentStopFiltersType } from '@/types'
 
@@ -58,11 +60,16 @@ const UrgentStopPage = () => {
   }, [])
 
   const rankedProperties = useMemo(
-    () => rankUrgentStopProperties(mockProperties, userLocation),
+    () => rankUrgentStopProperties(mockProperties, userLocation, mockUsers),
     [userLocation],
   )
   const fallbackRankedProperties = useMemo(
-    () => rankUrgentStopProperties(mockProperties, mockUser.location.coordinates),
+    () =>
+      rankUrgentStopProperties(
+        mockProperties,
+        mockUser.location.coordinates,
+        mockUsers,
+      ),
     [],
   )
 
@@ -92,7 +99,11 @@ const UrgentStopPage = () => {
         return false
       }
 
-      if (filters.verifiedParkingOnly && !property.safeParkingVerified) {
+      if (
+        filters.verifiedParkingOnly &&
+        !calculatePropertyParkingTrust(property, property.reviews, mockUsers)
+          .hasVerifiedSafeParking
+      ) {
         return false
       }
 

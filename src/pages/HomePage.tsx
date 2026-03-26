@@ -8,6 +8,8 @@ import PropertiesToolbar from '@/components/properties/PropertiesToolbar'
 import { mockProperties } from '@/data/properties/mockProperties'
 import { mockUser } from '@/data/users/mockUser'
 import { getDistanceInKm } from '@/lib/distance'
+import { calculatePropertyParkingTrust } from '@/lib/parkingTrust'
+import { mockUsers } from '@/data/users/mockUsers'
 import type { Property } from '@/types'
 import type { PropertyFilters } from '@/types'
 import type { PropertySearch } from '@/types'
@@ -64,6 +66,11 @@ const HomePage = () => {
   const visibleProperties = mockProperties
     .map((property) => ({
       property,
+      parkingTrust: calculatePropertyParkingTrust(
+        property,
+        property.reviews,
+        mockUsers,
+      ),
       distanceInKm: getDistanceInKm(
         mockUser.location.coordinates,
         property.coordinates,
@@ -93,9 +100,9 @@ const HomePage = () => {
         ? property.parking.motoWashStation
         : true,
     )
-    .filter(({ property }) =>
+    .filter(({ parkingTrust }) =>
       advancedFilters.onsiteVerifiedParkingOnly
-        ? property.trustSignals.onsiteVerifiedParking
+        ? parkingTrust.hasVerifiedSafeParking
         : true,
     )
     .filter(({ property }) =>
