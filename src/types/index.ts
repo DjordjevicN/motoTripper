@@ -4,6 +4,13 @@ export type Coordinates = {
 }
 
 export type TrustTier = 'unverified' | 'trusted' | 'high-trust' | 'elite'
+export type ParkingVerificationLevel =
+  | 'none'
+  | 'parking-available'
+  | 'rider-confirmed'
+  | 'trusted-confirmed'
+  | 'verified-safe-parking'
+  | 'mixed-feedback'
 export type RidingStyle =
   | 'touring'
   | 'sport'
@@ -105,6 +112,7 @@ export type Property = {
   coveredParking: boolean
   riderConfirmedCount: number
   phone: string
+  badges?: string[]
   roomAvailability: {
     roomsLeft: number
     nextAvailableDate: string
@@ -203,4 +211,18 @@ export type UserProfileSummary = {
   savedProperties: Property[]
   savedUrgentStops: Property[]
   recentViewedProperties: Property[]
+}
+
+export type PropertyParkingTrust = {
+  propertyId: string
+  totalConfirmations: number
+  trustedConfirmations: number
+  highTrustConfirmations: number
+  eliteConfirmations: number
+  photoEvidenceCount: number
+  coveredParkingConfirmations: number
+  contradictoryUnsafeSignals: number
+  parkingSafetyScore: number
+  verificationLevel: ParkingVerificationLevel
+  hasVerifiedSafeParking: boolean
 }

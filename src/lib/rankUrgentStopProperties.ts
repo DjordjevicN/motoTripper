@@ -1,5 +1,6 @@
 import { getDistanceInKm } from '@/lib/distance'
-import type { Coordinates, Property } from '@/types'
+import { calculatePropertyParkingTrust } from '@/lib/parkingTrust'
+import type { Coordinates, Property, User } from '@/types'
 
 export type RankedUrgentStopProperty = {
   property: Property
@@ -17,18 +18,25 @@ const DISTANCE_BASELINE = 80
 export const rankUrgentStopProperties = (
   properties: Property[],
   userLocation: Coordinates,
+  users: User[],
 ): RankedUrgentStopProperty[] => {
   return properties
     .map((property) => {
       const distanceInKm = getDistanceInKm(userLocation, property.coordinates)
+      const parkingTrust = calculatePropertyParkingTrust(
+        property,
+        property.reviews,
+        users,
+      )
 
       let score = 0
 
-      if (property.safeParkingVerified) {
+      if (parkingTrust.hasVerifiedSafeParking) {
         score += SAFE_PARKING_WEIGHT
       }
 
-      score += property.riderConfirmedCount * RIDER_CONFIRMATION_WEIGHT
+      score += parkingTrust.totalConfirmations * RIDER_CONFIRMATION_WEIGHT
+      score += parkingTrust.highTrustConfirmations * 12
 
       if (property.availableTonight) {
         score += AVAILABLE_TONIGHT_WEIGHT
@@ -38,6 +46,7 @@ export const rankUrgentStopProperties = (
         score += COVERED_PARKING_WEIGHT
       }
 
+      score -= parkingTrust.contradictoryUnsafeSignals * 40
       score += Math.max(0, DISTANCE_BASELINE - distanceInKm * DISTANCE_WEIGHT)
 
       return {

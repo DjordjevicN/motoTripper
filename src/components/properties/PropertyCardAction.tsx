@@ -1,11 +1,19 @@
-import type { Property } from '@/types'
+import {
+  getParkingBadgeVariant,
+  getParkingVerificationLabel,
+} from '@/lib/parkingTrust'
 import { formatCurrency } from '@/lib/helper'
+import type { Property, PropertyParkingTrust } from '@/types'
 
 type PropertyCardActionProps = {
   property: Property
+  parkingTrust: PropertyParkingTrust
 }
 
-const PropertyCardAction = ({ property }: PropertyCardActionProps) => {
+const PropertyCardAction = ({
+  property,
+  parkingTrust,
+}: PropertyCardActionProps) => {
   const totalNightlyCost =
     property.nightlyPrice + property.cleaningFee + property.serviceFee
 
@@ -27,16 +35,23 @@ const PropertyCardAction = ({ property }: PropertyCardActionProps) => {
         <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-[11px] font-medium text-sky-300 ring-1 ring-sky-500/30">
           Free cancellation
         </span>
-        {property.trustSignals.onsiteVerifiedParking ? (
-          <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-[11px] font-medium text-amber-300 ring-1 ring-amber-500/30">
-            Safe parking verified
-          </span>
-        ) : null}
-        {property.trustSignals.verifiedRiderRecommended ? (
-          <span className="rounded-full bg-violet-500/15 px-2.5 py-1 text-[11px] font-medium text-violet-300 ring-1 ring-violet-500/30">
-            Verified users recommend
-          </span>
-        ) : null}
+        <span
+          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ${getParkingBadgeVariant(
+            parkingTrust.verificationLevel,
+          )}`}
+        >
+          {getParkingVerificationLabel(parkingTrust.verificationLevel)}
+        </span>
+        <span className="text-[11px] text-muted-foreground">
+          Confirmed by {parkingTrust.totalConfirmations} rider
+          {parkingTrust.totalConfirmations === 1 ? '' : 's'}
+          {parkingTrust.highTrustConfirmations > 0
+            ? ` · ${parkingTrust.highTrustConfirmations} high-trust`
+            : ''}
+          {parkingTrust.photoEvidenceCount > 0
+            ? ` · ${parkingTrust.photoEvidenceCount} photo verified`
+            : ''}
+        </span>
       </div>
     </div>
   )

@@ -18,6 +18,13 @@ import { mockUser } from '@/data/users/mockUser'
 import { mockUsers } from '@/data/users/mockUsers'
 import { getDistanceInKm } from '@/lib/distance'
 import { formatCurrency } from '@/lib/helper'
+import {
+  calculatePropertyParkingTrust,
+  deriveParkingBadges,
+  getParkingBadgeVariant,
+  getParkingVerificationDescription,
+  getParkingVerificationLabel,
+} from '@/lib/parkingTrust'
 import { getAllPropertyReviews } from '@/lib/reviews'
 import { getUserTrustSummary } from '@/lib/trust'
 
@@ -36,6 +43,8 @@ const PropertyDetails = () => {
     property.coordinates,
   )
   const allReviews = getAllPropertyReviews(mockProperties)
+  const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, mockUsers)
+  const parkingBadges = deriveParkingBadges(parkingTrust)
 
   const totalNightlyCost =
     property.nightlyPrice + property.cleaningFee + property.serviceFee
@@ -87,16 +96,17 @@ const PropertyDetails = () => {
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
-              {property.trustSignals.onsiteVerifiedParking ? (
-                <Tag className="border-emerald-500/40 bg-emerald-500/10 text-emerald-300">
-                  Human onsite verified safe parking
-                </Tag>
-              ) : null}
+              <Tag className={getParkingBadgeVariant(parkingTrust.verificationLevel)}>
+                {getParkingVerificationLabel(parkingTrust.verificationLevel)}
+              </Tag>
               {property.trustSignals.verifiedRiderRecommended ? (
                 <Tag className="border-sky-500/40 bg-sky-500/10 text-sky-300">
                   Recommended by verified users
                 </Tag>
               ) : null}
+              {parkingBadges.slice(1).map((badge) => (
+                <Tag key={badge}>{badge}</Tag>
+              ))}
               {property.tags.map((tag) => (
                 <Tag key={tag}>{tag}</Tag>
               ))}
@@ -163,6 +173,36 @@ const PropertyDetails = () => {
                 <CircleParking className="size-5 text-primary" />
                 <h2 className="text-xl font-semibold">Parking for motorcycles</h2>
               </div>
+              <div className="mb-4 space-y-3 rounded-[1.5rem] border border-border/70 bg-background/60 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Tag className={getParkingBadgeVariant(parkingTrust.verificationLevel)}>
+                    {getParkingVerificationLabel(parkingTrust.verificationLevel)}
+                  </Tag>
+                  <Pill variant="secondary">
+                    Safety score {parkingTrust.parkingSafetyScore}/100
+                  </Pill>
+                </div>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {getParkingVerificationDescription(
+                    parkingTrust.verificationLevel,
+                    parkingTrust,
+                  )}
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl bg-card/80 p-3 text-sm text-muted-foreground">
+                    {parkingTrust.totalConfirmations} rider confirmations
+                  </div>
+                  <div className="rounded-2xl bg-card/80 p-3 text-sm text-muted-foreground">
+                    {parkingTrust.highTrustConfirmations} high-trust or elite confirmations
+                  </div>
+                  <div className="rounded-2xl bg-card/80 p-3 text-sm text-muted-foreground">
+                    {parkingTrust.photoEvidenceCount} parking photo evidence items
+                  </div>
+                  <div className="rounded-2xl bg-card/80 p-3 text-sm text-muted-foreground">
+                    {parkingTrust.coveredParkingConfirmations} covered parking confirmations
+                  </div>
+                </div>
+              </div>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>{property.parking.spaces} dedicated parking spots</p>
                 <p>
@@ -179,6 +219,12 @@ const PropertyDetails = () => {
                     ? 'Trailer friendly access'
                     : 'Best for bikes without trailer'}
                 </p>
+                {parkingTrust.contradictoryUnsafeSignals > 0 ? (
+                  <p className="text-rose-300">
+                    {parkingTrust.contradictoryUnsafeSignals} contradictory rider signal
+                    {parkingTrust.contradictoryUnsafeSignals === 1 ? '' : 's'} detected.
+                  </p>
+                ) : null}
               </div>
             </article>
 
