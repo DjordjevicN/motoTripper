@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import App from '@/App'
 import EditProfilePage from './pages/EditProfilePage'
 import HomePage from './pages/HomePage'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/loginPage'
 import ProfilePage from './pages/ProfilePage'
 import PropertyDetails from './pages/PropertyDetails'
@@ -18,6 +19,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: 'landing',
+        element: <LandingPage />,
       },
       {
         path: 'properties/:propertyId',
