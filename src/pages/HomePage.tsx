@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 
 import HomeFilters from '@/components/properties/HomeFilters'
 import PropertyCard from '@/components/properties/PropertyCard'
+import PropertiesSearchBar from '@/components/properties/PropertiesSearchBar'
 import PropertiesToolbar from '@/components/properties/PropertiesToolbar'
 import { mockProperties } from '@/data/properties/mockProperties'
 import { mockUser } from '@/data/users/mockUser'
 import { getDistanceInKm } from '@/lib/distance'
 import type { Property } from '@/types'
 import type { PropertyFilters } from '@/types'
+import type { PropertySearch } from '@/types'
 
 const MIN_PRICE = Math.min(
   ...mockProperties.map((property) => property.nightlyPrice),
@@ -29,9 +31,6 @@ const DISTANCE_STEP = 5
 type SortMode = 'distance' | 'price-asc' | 'price-desc'
 
 const defaultAdvancedFilters: PropertyFilters = {
-  minGuests: 1,
-  minBedrooms: 1,
-  minWifiSpeed: 0,
   coveredParkingOnly: false,
   trailerFriendlyOnly: false,
   motoWashStationOnly: false,
@@ -40,11 +39,20 @@ const defaultAdvancedFilters: PropertyFilters = {
   availableTonightOnly: false,
 }
 
+const defaultPropertySearch: PropertySearch = {
+  town: '',
+  guests: 1,
+  rooms: 1,
+}
+
 const HomePage = () => {
   const navigate = useNavigate()
   const [maxPrice, setMaxPrice] = useState(MAX_PRICE)
   const [maxDistance, setMaxDistance] = useState(MAX_DISTANCE)
   const [sortMode, setSortMode] = useState<SortMode>('distance')
+  const [propertySearch, setPropertySearch] = useState<PropertySearch>(
+    defaultPropertySearch,
+  )
   const [advancedFilters, setAdvancedFilters] = useState<PropertyFilters>(
     defaultAdvancedFilters,
   )
@@ -61,11 +69,17 @@ const HomePage = () => {
         property.coordinates,
       ),
     }))
+    .filter(({ property }) =>
+      propertySearch.town.trim()
+        ? property.locationLabel
+            .toLowerCase()
+            .includes(propertySearch.town.trim().toLowerCase())
+        : true,
+    )
     .filter(({ property }) => property.nightlyPrice <= maxPrice)
     .filter(({ distanceInKm }) => distanceInKm <= maxDistance)
-    .filter(({ property }) => property.guests >= advancedFilters.minGuests)
-    .filter(({ property }) => property.bedrooms >= advancedFilters.minBedrooms)
-    .filter(({ property }) => property.wifi.speedMbps >= advancedFilters.minWifiSpeed)
+    .filter(({ property }) => property.guests >= propertySearch.guests)
+    .filter(({ property }) => property.bedrooms >= propertySearch.rooms)
     .filter(({ property }) =>
       advancedFilters.coveredParkingOnly ? property.parking.covered : true,
     )
@@ -141,6 +155,11 @@ const HomePage = () => {
 
           <div className="min-w-0 flex-1 lg:h-full lg:overflow-y-auto lg:pr-3">
             <div className="space-y-5">
+              <PropertiesSearchBar
+                search={propertySearch}
+                onSearchChange={setPropertySearch}
+              />
+
               <PropertiesToolbar
                 visibleCount={visibleProperties.length}
                 locationLabel={mockUser.location.label}

@@ -48,78 +48,7 @@ const HomeFiltersModal = ({
           </button>
         </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-          <div className="space-y-4 rounded-[1.5rem] border border-border/70 bg-background/60 p-5">
-            <h3 className="font-semibold">Space and comfort</h3>
-
-            <label className="block space-y-2">
-              <span className="text-sm text-muted-foreground">
-                Minimum guests
-              </span>
-              <input
-                type="range"
-                min={1}
-                max={8}
-                step={1}
-                value={filters.minGuests}
-                onChange={(event) =>
-                  onFiltersChange({
-                    ...filters,
-                    minGuests: Number(event.target.value),
-                  })
-                }
-                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-secondary accent-[var(--primary)]"
-              />
-              <span className="text-sm font-medium">{filters.minGuests}+ guests</span>
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm text-muted-foreground">
-                Minimum bedrooms
-              </span>
-              <input
-                type="range"
-                min={1}
-                max={4}
-                step={1}
-                value={filters.minBedrooms}
-                onChange={(event) =>
-                  onFiltersChange({
-                    ...filters,
-                    minBedrooms: Number(event.target.value),
-                  })
-                }
-                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-secondary accent-[var(--primary)]"
-              />
-              <span className="text-sm font-medium">
-                {filters.minBedrooms}+ bedrooms
-              </span>
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm text-muted-foreground">
-                Minimum Wi-Fi speed
-              </span>
-              <input
-                type="range"
-                min={0}
-                max={300}
-                step={25}
-                value={filters.minWifiSpeed}
-                onChange={(event) =>
-                  onFiltersChange({
-                    ...filters,
-                    minWifiSpeed: Number(event.target.value),
-                  })
-                }
-                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-secondary accent-[var(--primary)]"
-              />
-              <span className="text-sm font-medium">
-                {filters.minWifiSpeed} Mbps or faster
-              </span>
-            </label>
-          </div>
-
+        <div className="mt-6">
           <div className="space-y-4 rounded-[1.5rem] border border-border/70 bg-background/60 p-5">
             <h3 className="font-semibold">Rider essentials</h3>
 
