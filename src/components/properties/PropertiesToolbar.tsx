@@ -24,48 +24,58 @@ const PropertiesToolbar = ({
   onSortChange,
 }: PropertiesToolbarProps) => {
   return (
-    <div className="flex flex-col gap-3 rounded-[1.75rem] border border-border/70 bg-background/80 p-5 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+    <div className="rounded-[1.5rem] border border-border/70 bg-background/70 px-4 py-4">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
           Nearby properties
-        </p>
-        <h2 className="mt-2 text-3xl font-semibold tracking-tight">
-          Sort by distance or price
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Showing {visibleCount} stays around {locationLabel}.
-        </p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Pill variant="secondary" className="text-[11px]">
-          Max price: {formatCurrency(maxPrice)}
-        </Pill>
-        <Pill variant="secondary" className="text-[11px]">
-          Max distance: {maxDistance} km
-        </Pill>
-        <Button
-          variant={sortMode === 'distance' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onSortChange('distance')}
-        >
-          Distance
-        </Button>
-        <Button
-          variant={sortMode === 'price-asc' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onSortChange('price-asc')}
-        >
-          <ArrowUpNarrowWide />
-          Price
-        </Button>
-        <Button
-          variant={sortMode === 'price-desc' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onSortChange('price-desc')}
-        >
-          <ArrowDownNarrowWide />
-          Price
-        </Button>
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              {visibleCount} stays
+            </h2>
+            <span className="text-sm text-muted-foreground">
+              around {locationLabel}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 xl:items-end">
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill variant="secondary" className="text-[11px]">
+              Max price: {formatCurrency(maxPrice)}
+            </Pill>
+            <Pill variant="secondary" className="text-[11px]">
+              Max distance: {maxDistance} km
+            </Pill>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={sortMode === 'distance' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onSortChange('distance')}
+            >
+              Distance
+            </Button>
+            <Button
+              variant={sortMode === 'price-asc' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onSortChange('price-asc')}
+            >
+              <ArrowUpNarrowWide />
+              Price
+            </Button>
+            <Button
+              variant={sortMode === 'price-desc' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onSortChange('price-desc')}
+            >
+              <ArrowDownNarrowWide />
+              Price
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   )

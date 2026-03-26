@@ -66,13 +66,16 @@ export type MockUser = {
 }
 
 export type PropertyFilters = {
-  minGuests: number
-  minBedrooms: number
-  minWifiSpeed: number
   coveredParkingOnly: boolean
   trailerFriendlyOnly: boolean
   motoWashStationOnly: boolean
   onsiteVerifiedParkingOnly: boolean
   verifiedRiderRecommendedOnly: boolean
   availableTonightOnly: boolean
+}
+
+export type PropertySearch = {
+  town: string
+  guests: number
+  rooms: number
 }
