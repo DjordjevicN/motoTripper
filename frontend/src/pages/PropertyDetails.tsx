@@ -13,9 +13,8 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import PropertyLocation from '@/components/properties/PropertyLocation'
 import Pill from '@/components/ui/pill'
 import Tag from '@/components/ui/tag'
-import { mockProperties } from '@/data/properties/mockProperties'
-import { mockUser } from '@/data/users/mockUser'
-import { mockUsers } from '@/data/users/mockUsers'
+import { useAppBootstrap } from '@/lib/api'
+import { FALLBACK_USER_LOCATION } from '@/lib/constants'
 import { getDistanceInKm } from '@/lib/distance'
 import { formatCurrency } from '@/lib/helper'
 import {
@@ -31,19 +30,30 @@ import { getUserTrustSummary } from '@/lib/trust'
 const PropertyDetails = () => {
   const { propertyId } = useParams()
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const { data, isLoading, isError } = useAppBootstrap()
+  const properties = data?.properties ?? []
+  const users = data?.users ?? []
 
-  const property = mockProperties.find((item) => item.id === propertyId)
+  const property = properties.find((item) => item.id === propertyId)
+
+  if (isLoading) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Loading property...</main>
+  }
+
+  if (isError) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Could not load property details.</main>
+  }
 
   if (!property) {
     return <Navigate to="/" replace />
   }
 
   const distanceInKm = getDistanceInKm(
-    mockUser.location.coordinates,
+    FALLBACK_USER_LOCATION.coordinates,
     property.coordinates,
   )
-  const allReviews = getAllPropertyReviews(mockProperties)
-  const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, mockUsers)
+  const allReviews = getAllPropertyReviews(properties)
+  const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, users)
   const parkingBadges = deriveParkingBadges(parkingTrust)
 
   const totalNightlyCost =
@@ -318,7 +328,7 @@ const PropertyDetails = () => {
                   const trustSummary = getUserTrustSummary(
                     review.userId,
                     allReviews,
-                    mockUsers,
+                    users,
                   )
 
                   return (

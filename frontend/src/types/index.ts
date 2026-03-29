@@ -4,6 +4,7 @@ export type Coordinates = {
 }
 
 export type TrustTier = 'unverified' | 'trusted' | 'high-trust' | 'elite'
+export type PlatformRole = 'rider' | 'host' | 'admin'
 export type ParkingVerificationLevel =
   | 'none'
   | 'parking-available'
@@ -61,6 +62,7 @@ export type PropertyReview = {
 export type User = {
   id: string
   name: string
+  email?: string
   avatar?: string
   location?: string
   bio?: string
@@ -80,6 +82,7 @@ export type User = {
   accountAgeDays?: number
   trustScore: number
   trustTier: TrustTier
+  platformRole?: PlatformRole
   xp?: number
   level?: string
   typicalTripType?: TypicalTripType

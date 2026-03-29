@@ -4,33 +4,43 @@ import { Link } from 'react-router-dom'
 
 import UrgentStopCard from '@/components/properties/UrgentStopCard'
 import UrgentStopFilters from '@/components/properties/UrgentStopFilters'
-import { mockProperties } from '@/data/properties/mockProperties'
-import { mockUser } from '@/data/users/mockUser'
-import { mockUsers } from '@/data/users/mockUsers'
+import { useAppBootstrap } from '@/lib/api'
 import { calculatePropertyParkingTrust } from '@/lib/parkingTrust'
 import { rankUrgentStopProperties } from '@/lib/rankUrgentStopProperties'
-import type { Coordinates, UrgentStopFilters as UrgentStopFiltersType } from '@/types'
+import { FALLBACK_USER_LOCATION } from '@/lib/constants'
+import type {
+  Coordinates,
+  Property,
+  UrgentStopFilters as UrgentStopFiltersType,
+  User,
+} from '@/types'
 
-const MAX_PRICE = Math.max(...mockProperties.map((property) => property.price))
 const MAX_DISTANCE = 120
+const EMPTY_PROPERTIES: Property[] = []
+const EMPTY_USERS: User[] = []
 const hasGeolocationSupport =
   typeof navigator !== 'undefined' && 'geolocation' in navigator
 
-const defaultUrgentFilters: UrgentStopFiltersType = {
-  maxDistance: 80,
-  maxPrice: MAX_PRICE,
-  verifiedParkingOnly: false,
-  coveredParkingOnly: false,
-  availableTonightOnly: true,
-}
-
 const UrgentStopPage = () => {
+  const { data, isLoading, isError } = useAppBootstrap()
+  const properties = data?.properties ?? EMPTY_PROPERTIES
+  const users = data?.users ?? EMPTY_USERS
+  const maxPriceLimit = properties.length
+    ? Math.max(...properties.map((property) => property.price))
+    : 0
   const [filters, setFilters] =
-    useState<UrgentStopFiltersType>(defaultUrgentFilters)
+    useState<UrgentStopFiltersType>({
+      maxDistance: 80,
+      maxPrice: maxPriceLimit,
+      verifiedParkingOnly: false,
+      coveredParkingOnly: false,
+      availableTonightOnly: true,
+    })
+  const effectiveMaxPrice = filters.maxPrice === 0 ? maxPriceLimit : filters.maxPrice
   const [userLocation, setUserLocation] = useState<Coordinates>(
-    mockUser.location.coordinates,
+    FALLBACK_USER_LOCATION.coordinates,
   )
-  const [locationLabel, setLocationLabel] = useState(mockUser.location.label)
+  const [locationLabel, setLocationLabel] = useState(FALLBACK_USER_LOCATION.label)
   const [locationStatus, setLocationStatus] = useState<
     'locating' | 'current' | 'fallback' | 'mock-nearby'
   >(hasGeolocationSupport ? 'locating' : 'fallback')
@@ -60,17 +70,17 @@ const UrgentStopPage = () => {
   }, [])
 
   const rankedProperties = useMemo(
-    () => rankUrgentStopProperties(mockProperties, userLocation, mockUsers),
-    [userLocation],
+    () => rankUrgentStopProperties(properties, userLocation, users),
+    [properties, userLocation, users],
   )
   const fallbackRankedProperties = useMemo(
     () =>
       rankUrgentStopProperties(
-        mockProperties,
-        mockUser.location.coordinates,
-        mockUsers,
+        properties,
+        FALLBACK_USER_LOCATION.coordinates,
+        users,
       ),
-    [],
+    [properties, users],
   )
 
   const hasNearbyCurrentMatches = rankedProperties.some(
@@ -82,7 +92,7 @@ const UrgentStopPage = () => {
       : rankedProperties
   const activeLocationLabel =
     locationStatus === 'current' && !hasNearbyCurrentMatches
-      ? mockUser.location.label
+      ? FALLBACK_USER_LOCATION.label
       : locationLabel
 
   const visibleProperties = activeRankedProperties.filter(
@@ -95,13 +105,13 @@ const UrgentStopPage = () => {
         return false
       }
 
-      if (property.price > filters.maxPrice) {
+      if (property.price > effectiveMaxPrice) {
         return false
       }
 
       if (
         filters.verifiedParkingOnly &&
-        !calculatePropertyParkingTrust(property, property.reviews, mockUsers)
+        !calculatePropertyParkingTrust(property, property.reviews, users)
           .hasVerifiedSafeParking
       ) {
         return false
@@ -119,12 +129,20 @@ const UrgentStopPage = () => {
     locationStatus === 'current'
       ? hasNearbyCurrentMatches
         ? 'Using your current location'
-        : `Using mock nearby location: ${mockUser.location.label}`
+        : `Using mock nearby location: ${FALLBACK_USER_LOCATION.label}`
       : locationStatus === 'mock-nearby'
-        ? `Using mock nearby location: ${mockUser.location.label}`
+        ? `Using mock nearby location: ${FALLBACK_USER_LOCATION.label}`
       : locationStatus === 'fallback'
-        ? `Using fallback location: ${mockUser.location.label}`
+        ? `Using fallback location: ${FALLBACK_USER_LOCATION.label}`
         : 'Checking your location'
+
+  if (isLoading) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Loading urgent stop results...</main>
+  }
+
+  if (isError) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Could not load urgent stop data from the backend.</main>
+  }
 
   return (
     <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
@@ -176,8 +194,14 @@ const UrgentStopPage = () => {
         <UrgentStopFilters
           filters={filters}
           maxDistanceLimit={MAX_DISTANCE}
-          maxPriceLimit={MAX_PRICE}
-          onFiltersChange={setFilters}
+          maxPriceLimit={maxPriceLimit}
+          onFiltersChange={(nextFilters) =>
+            setFilters({
+              ...nextFilters,
+              maxPrice:
+                nextFilters.maxPrice === 0 ? effectiveMaxPrice : nextFilters.maxPrice,
+            })
+          }
           onExpandSearchRadius={() =>
             setFilters((current) => ({
               ...current,
@@ -198,6 +222,7 @@ const UrgentStopPage = () => {
                 <UrgentStopCard
                   key={property.id}
                   property={property}
+                  users={users}
                   distanceInKm={distanceInKm}
                 />
               ))}

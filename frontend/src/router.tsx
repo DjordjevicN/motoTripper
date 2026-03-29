@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom'
 
 import App from '@/App'
+import RequireAuth from '@/components/auth/RequireAuth'
 import CommunityPropertyOnboardingPage from './pages/CommunityPropertyOnboardingPage'
 import EditProfilePage from './pages/EditProfilePage'
 import HomePage from './pages/HomePage'
@@ -30,15 +31,13 @@ export const router = createBrowserRouter([
       },
       {
         path: 'community/onboarding',
-        element: <CommunityPropertyOnboardingPage />,
-      },
-      {
-        path: 'host/onboarding',
-        element: <HostOnboardingPage />,
-      },
-      {
-        path: 'host/dashboard',
-        element: <HostDashboardPage />,
+        element: <RequireAuth />,
+        children: [
+          {
+            index: true,
+            element: <CommunityPropertyOnboardingPage />,
+          },
+        ],
       },
       {
         path: 'properties/:propertyId',
@@ -46,7 +45,13 @@ export const router = createBrowserRouter([
       },
       {
         path: 'profile',
-        element: <ProfilePage />,
+        element: <RequireAuth />,
+        children: [
+          {
+            index: true,
+            element: <ProfilePage />,
+          },
+        ],
       },
       {
         path: 'profile/:userId',
@@ -54,7 +59,33 @@ export const router = createBrowserRouter([
       },
       {
         path: 'profile/:userId/edit',
-        element: <EditProfilePage />,
+        element: <RequireAuth />,
+        children: [
+          {
+            index: true,
+            element: <EditProfilePage />,
+          },
+        ],
+      },
+      {
+        path: 'host/onboarding',
+        element: <RequireAuth />,
+        children: [
+          {
+            index: true,
+            element: <HostOnboardingPage />,
+          },
+        ],
+      },
+      {
+        path: 'host/dashboard',
+        element: <RequireAuth />,
+        children: [
+          {
+            index: true,
+            element: <HostDashboardPage />,
+          },
+        ],
       },
       {
         path: 'login',

@@ -2,8 +2,7 @@ import { Link } from 'react-router-dom'
 
 import LandingSectionHeading from '@/components/landing/LandingSectionHeading'
 import Tag from '@/components/ui/tag'
-import { mockProperties } from '@/data/properties/mockProperties'
-import { mockUsers } from '@/data/users/mockUsers'
+import { useAppBootstrap } from '@/lib/api'
 import {
   calculatePropertyParkingTrust,
   getParkingBadgeVariant,
@@ -12,8 +11,14 @@ import {
 import { formatCurrency } from '@/lib/helper'
 
 const ProductPreviewSection = () => {
-  const previewProperties = mockProperties.slice(0, 3)
-  const featuredRider = mockUsers.find((user) => user.id === 'rider-4') ?? mockUsers[0]
+  const { data } = useAppBootstrap()
+  const previewProperties = (data?.properties ?? []).slice(0, 3)
+  const users = data?.users ?? []
+  const featuredRider = users.find((user) => user.id === 'rider-4') ?? users[0]
+
+  if (!featuredRider || previewProperties.length === 0) {
+    return null
+  }
 
   return (
     <section className="space-y-8">
@@ -29,7 +34,7 @@ const ProductPreviewSection = () => {
             const parkingTrust = calculatePropertyParkingTrust(
               property,
               property.reviews,
-              mockUsers,
+              users,
             )
 
             return (

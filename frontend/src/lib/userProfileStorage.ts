@@ -1,4 +1,4 @@
-import { mockCurrentUserId, mockUsers } from '@/data/users/mockUsers'
+import { CURRENT_USER_ID } from '@/lib/constants'
 import type { User } from '@/types'
 
 const STORAGE_KEY = 'mototripper_profile_overrides'
@@ -37,19 +37,6 @@ export const saveStoredUserOverride = (
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextMap))
 }
 
-export const getResolvedUser = (userId: string) => {
-  const baseUser = mockUsers.find((user) => user.id === userId)
-
-  if (!baseUser) {
-    return null
-  }
-
-  return {
-    ...baseUser,
-    ...getStoredUserOverride(userId),
-  }
-}
-
 export const getResolvedCurrentUser = () => {
-  return getResolvedUser(mockCurrentUserId)
+  return getStoredUserOverride(CURRENT_USER_ID)
 }

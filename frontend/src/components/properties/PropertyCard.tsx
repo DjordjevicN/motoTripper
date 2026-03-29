@@ -4,27 +4,28 @@ import PropertyCardAction from '@/components/properties/PropertyCardAction'
 import PropertyLocation from '@/components/properties/PropertyLocation'
 import Pill from '@/components/ui/pill'
 import Tag from '@/components/ui/tag'
-import { mockUsers } from '@/data/users/mockUsers'
 import {
   calculatePropertyParkingTrust,
   deriveParkingBadges,
   getParkingBadgeVariant,
   getParkingVerificationLabel,
 } from '@/lib/parkingTrust'
-import type { Property } from '@/types'
+import type { Property, User } from '@/types'
 
 type PropertyCardProps = {
   property: Property
+  users: User[]
   distanceInKm: number
   onAction?: (property: Property) => void
 }
 
 const PropertyCard = ({
   property,
+  users,
   distanceInKm,
   onAction,
 }: PropertyCardProps) => {
-  const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, mockUsers)
+  const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, users)
   const parkingBadges = deriveParkingBadges(parkingTrust)
 
   const cardContent = (

@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, Save } from 'lucide-react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
+import { useAuth } from '@/components/auth/useAuth'
 import { Button } from '@/components/ui/button'
-import { mockCurrentUserId } from '@/data/users/mockUsers'
-import { getResolvedUser, saveStoredUserOverride } from '@/lib/userProfileStorage'
+import { useToast } from '@/components/ui/use-toast'
+import { updateUserProfile, useAppBootstrap } from '@/lib/api'
+import { useCurrentAppUser } from '@/lib/auth'
 import type {
   ExperienceLevel,
   MotorcycleType,
@@ -54,6 +57,7 @@ const stopStyles: PreferredStopStyle[] = [
 ]
 
 type EditProfileForm = {
+  email: string
   name: string
   location: string
   bio: string
@@ -68,73 +72,90 @@ type EditProfileForm = {
   motorcycleEngineCc: string
 }
 
-const EditProfilePage = () => {
+const createFormState = (user: User): EditProfileForm => ({
+  email: user.email ?? '',
+  name: user.name,
+  location: user.location ?? '',
+  bio: user.bio ?? '',
+  ridingStyle: user.ridingStyle ?? 'mixed',
+  experienceLevel: user.experienceLevel ?? 'intermediate',
+  typicalTripType: user.typicalTripType ?? 'mixed',
+  preferredStopStyle: user.preferredStopStyle ?? 'mixed',
+  motorcycleBrand: user.motorcycle?.brand ?? '',
+  motorcycleModel: user.motorcycle?.model ?? '',
+  motorcycleYear: user.motorcycle?.year?.toString() ?? '',
+  motorcycleType: user.motorcycle?.type ?? 'other',
+  motorcycleEngineCc: user.motorcycle?.engineCc?.toString() ?? '',
+})
+
+type EditProfileFormContentProps = {
+  targetUserId: string
+  user: User
+}
+
+const EditProfileFormContent = ({
+  targetUserId,
+  user,
+}: EditProfileFormContentProps) => {
   const navigate = useNavigate()
-  const { userId } = useParams()
-  const targetUserId = userId ?? mockCurrentUserId
-  const user = useMemo(() => getResolvedUser(targetUserId), [targetUserId])
-  const [savedMessage, setSavedMessage] = useState('')
-
-  const [form, setForm] = useState<EditProfileForm>(() => ({
-    name: user?.name ?? '',
-    location: user?.location ?? '',
-    bio: user?.bio ?? '',
-    ridingStyle: user?.ridingStyle ?? 'mixed',
-    experienceLevel: user?.experienceLevel ?? 'intermediate',
-    typicalTripType: user?.typicalTripType ?? 'mixed',
-    preferredStopStyle: user?.preferredStopStyle ?? 'mixed',
-    motorcycleBrand: user?.motorcycle?.brand ?? '',
-    motorcycleModel: user?.motorcycle?.model ?? '',
-    motorcycleYear: user?.motorcycle?.year?.toString() ?? '',
-    motorcycleType: user?.motorcycle?.type ?? 'other',
-    motorcycleEngineCc: user?.motorcycle?.engineCc?.toString() ?? '',
-  }))
-
-  if (!user) {
-    return <Navigate to="/" replace />
-  }
-
-  const isCurrentUser = targetUserId === mockCurrentUserId
-
-  if (!isCurrentUser) {
-    return <Navigate to={`/profile/${targetUserId}`} replace />
-  }
+  const queryClient = useQueryClient()
+  const { pushToast } = useToast()
+  const [form, setForm] = useState<EditProfileForm>(() => createFormState(user))
 
   const handleChange = <K extends keyof EditProfileForm>(
     key: K,
     value: EditProfileForm[K],
   ) => {
-    setSavedMessage('')
     setForm((current) => ({
       ...current,
       [key]: value,
     }))
   }
 
+  const saveProfileMutation = useMutation({
+    mutationFn: () =>
+      updateUserProfile(targetUserId, {
+        email: form.email.trim(),
+        name: form.name.trim(),
+        location: form.location.trim(),
+        bio: form.bio.trim(),
+        ridingStyle: form.ridingStyle,
+        experienceLevel: form.experienceLevel,
+        typicalTripType: form.typicalTripType,
+        preferredStopStyle: form.preferredStopStyle,
+        motorcycle: {
+          brand: form.motorcycleBrand.trim(),
+          model: form.motorcycleModel.trim(),
+          year: form.motorcycleYear ? Number(form.motorcycleYear) : undefined,
+          type: form.motorcycleType,
+          engineCc: form.motorcycleEngineCc
+            ? Number(form.motorcycleEngineCc)
+            : undefined,
+        },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['app-bootstrap'] })
+      pushToast({
+        tone: 'success',
+        title: 'Profile saved',
+        description: 'Your rider profile and email were updated successfully.',
+      })
+    },
+    onError: (error) => {
+      pushToast({
+        tone: 'error',
+        title: 'Could not save profile',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Something went wrong while saving your profile.',
+      })
+    },
+  })
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-
-    const override: Partial<User> = {
-      name: form.name,
-      location: form.location,
-      bio: form.bio,
-      ridingStyle: form.ridingStyle,
-      experienceLevel: form.experienceLevel,
-      typicalTripType: form.typicalTripType,
-      preferredStopStyle: form.preferredStopStyle,
-      motorcycle: {
-        brand: form.motorcycleBrand,
-        model: form.motorcycleModel,
-        year: form.motorcycleYear ? Number(form.motorcycleYear) : undefined,
-        type: form.motorcycleType,
-        engineCc: form.motorcycleEngineCc
-          ? Number(form.motorcycleEngineCc)
-          : undefined,
-      },
-    }
-
-    saveStoredUserOverride(targetUserId, override)
-    setSavedMessage('Profile changes saved locally on this device.')
+    saveProfileMutation.mutate()
   }
 
   return (
@@ -162,15 +183,23 @@ const EditProfilePage = () => {
             Keep your rider identity current
           </h1>
           <p className="mt-3 text-sm leading-7 text-muted-foreground">
-            This mock form updates your local profile data so your bike setup,
-            riding style, and travel preferences stay aligned with how others see
-            your trust and contributions.
+            Update your core rider details, motorcycle setup, and account email
+            from one place.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 grid gap-6 xl:grid-cols-2">
           <section className="space-y-4 rounded-[1.75rem] border border-border/70 bg-background/50 p-5">
             <h2 className="text-xl font-semibold">Basics</h2>
+            <label className="block space-y-2">
+              <span className="text-sm text-muted-foreground">Email</span>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) => handleChange('email', event.target.value)}
+                className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+              />
+            </label>
             <label className="block space-y-2">
               <span className="text-sm text-muted-foreground">Name</span>
               <input
@@ -344,16 +373,59 @@ const EditProfilePage = () => {
 
           <div className="xl:col-span-2 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              {savedMessage || 'Changes are stored locally in this browser only.'}
+              Email, rider identity, and motorcycle details are now saved to the platform backend.
             </p>
-            <Button type="submit">
+            <Button type="submit" disabled={saveProfileMutation.isPending}>
               <Save className="size-4" />
-              Save profile
+              {saveProfileMutation.isPending ? 'Saving...' : 'Save profile'}
             </Button>
           </div>
         </form>
       </section>
     </main>
+  )
+}
+
+const EditProfilePage = () => {
+  const { authUser } = useAuth()
+  const { userId } = useParams()
+  const { data, isLoading } = useAppBootstrap()
+  const currentUser = useCurrentAppUser(data?.users ?? [])
+  const targetUserId = userId ?? currentUser?.id ?? ''
+  const user = useMemo(
+    () =>
+      data?.users.find((item) => item.id === targetUserId) ??
+      currentUser ??
+      null,
+    [currentUser, data?.users, targetUserId],
+  )
+
+  if (isLoading) {
+    return (
+      <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+        Loading profile editor...
+      </main>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />
+  }
+
+  if (!authUser || !currentUser) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (targetUserId !== currentUser.id) {
+    return <Navigate to={`/profile/${targetUserId}`} replace />
+  }
+
+  return (
+    <EditProfileFormContent
+      key={user.id}
+      targetUserId={targetUserId}
+      user={user}
+    />
   )
 }
 

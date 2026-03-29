@@ -1,19 +1,92 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { UserPlus } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 
+import { useAuth } from '@/components/auth/useAuth'
 import { Button } from '@/components/ui/button'
-import { mockCurrentUserId } from '@/data/users/mockUsers'
+import { useToast } from '@/components/ui/use-toast'
+import { createUser, useAppBootstrap } from '@/lib/api'
+import { useCurrentAppUser } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 
 const SignUpPage = () => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { pushToast } = useToast()
+  const { authUser, isLoading } = useAuth()
+  const { data } = useAppBootstrap()
+  const resolvedUser = useCurrentAppUser(data?.users ?? [])
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    navigate(`/profile/${mockCurrentUserId}/edit`)
+    setIsSubmitting(true)
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedName = name.trim()
+
+    const { data: signUpData, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        data: {
+          full_name: normalizedName,
+        },
+      },
+    })
+
+    if (error) {
+      setIsSubmitting(false)
+      pushToast({
+        tone: 'error',
+        title: 'Could not create account',
+        description: error.message,
+      })
+      return
+    }
+
+    try {
+      const response = await createUser({
+        email: normalizedEmail,
+        name: normalizedName,
+      })
+
+      await queryClient.invalidateQueries({ queryKey: ['app-bootstrap'] })
+
+      pushToast({
+        tone: 'success',
+        title: 'Account created',
+        description: signUpData.session
+          ? 'Your rider account is ready. Complete your profile next.'
+          : 'Check your email to verify the account, then sign in to continue.',
+      })
+
+      if (signUpData.session) {
+        navigate(`/profile/${response.item.id}/edit`, { replace: true })
+        return
+      }
+
+      navigate('/login', { replace: true })
+    } catch (createUserError) {
+      pushToast({
+        tone: 'error',
+        title: 'Account created but profile setup failed',
+        description:
+          createUserError instanceof Error
+            ? createUserError.message
+            : 'Supabase account exists, but the rider profile could not be prepared.',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (!isLoading && authUser) {
+    return <Navigate to={resolvedUser ? `/profile/${resolvedUser.id}` : '/'} replace />
   }
 
   return (
@@ -46,6 +119,7 @@ const SignUpPage = () => {
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                autoComplete="name"
                 className="w-full rounded-xl border border-border/70 bg-background px-4 py-3"
               />
             </label>
@@ -56,6 +130,7 @@ const SignUpPage = () => {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
                 className="w-full rounded-xl border border-border/70 bg-background px-4 py-3"
               />
             </label>
@@ -66,13 +141,14 @@ const SignUpPage = () => {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                autoComplete="new-password"
                 className="w-full rounded-xl border border-border/70 bg-background px-4 py-3"
               />
             </label>
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               <UserPlus className="size-4" />
-              Create account
+              {isSubmitting ? 'Creating account...' : 'Create account'}
             </Button>
 
             <p className="text-sm text-muted-foreground">

@@ -1,18 +1,62 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { LogIn } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
-import { mockCurrentUserId } from '@/data/users/mockUsers'
+import { useAuth } from '@/components/auth/useAuth'
+import { useToast } from '@/components/ui/use-toast'
+import { useAppBootstrap } from '@/lib/api'
+import { useCurrentAppUser } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 
 const LoginPage = () => {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('nikola@example.com')
-  const [password, setPassword] = useState('demo1234')
+  const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
+  const { pushToast } = useToast()
+  const { authUser, isLoading } = useAuth()
+  const { data } = useAppBootstrap()
+  const resolvedUser = useCurrentAppUser(data?.users ?? [])
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    navigate(`/profile/${mockCurrentUserId}`)
+
+    setIsSubmitting(true)
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+
+    setIsSubmitting(false)
+
+    if (error) {
+      pushToast({
+        tone: 'error',
+        title: 'Could not sign in',
+        description: error.message,
+      })
+      return
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ['app-bootstrap'] })
+
+    pushToast({
+      tone: 'success',
+      title: 'Signed in',
+      description: 'Your rider session is active again.',
+    })
+
+    const nextPath = searchParams.get('next')
+    navigate(nextPath || '/profile', { replace: true })
+  }
+
+  if (!isLoading && authUser) {
+    return <Navigate to={resolvedUser ? `/profile/${resolvedUser.id}` : '/'} replace />
   }
 
   return (
@@ -46,6 +90,7 @@ const LoginPage = () => {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
                 className="w-full rounded-xl border border-border/70 bg-background px-4 py-3"
               />
             </label>
@@ -56,13 +101,14 @@ const LoginPage = () => {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                autoComplete="current-password"
                 className="w-full rounded-xl border border-border/70 bg-background px-4 py-3"
               />
             </label>
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               <LogIn className="size-4" />
-              Log in
+              {isSubmitting ? 'Signing in...' : 'Log in'}
             </Button>
 
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm">

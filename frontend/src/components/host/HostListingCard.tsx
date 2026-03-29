@@ -3,25 +3,25 @@ import { Link } from 'react-router-dom'
 
 import Tag from '@/components/ui/tag'
 import { Button } from '@/components/ui/button'
-import { mockProperties } from '@/data/properties/mockProperties'
-import { mockUsers } from '@/data/users/mockUsers'
 import { formatCurrency } from '@/lib/helper'
 import { getParkingVerificationLabel, calculatePropertyParkingTrust } from '@/lib/parkingTrust'
 import { getAllPropertyReviews } from '@/lib/reviews'
-import type { HostPropertyListing } from '@/types'
+import type { HostPropertyListing, Property, User } from '@/types'
 
 type HostListingCardProps = {
   listing: HostPropertyListing
+  properties: Property[]
+  users: User[]
 }
 
-const HostListingCard = ({ listing }: HostListingCardProps) => {
+const HostListingCard = ({ listing, properties, users }: HostListingCardProps) => {
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
   const [savedReplyId, setSavedReplyId] = useState<string | null>(null)
 
-  const allReviews = useMemo(() => getAllPropertyReviews(mockProperties), [])
-  const property = mockProperties.find((item) => item.id === listing.propertyId)
+  const allReviews = useMemo(() => getAllPropertyReviews(properties), [properties])
+  const property = properties.find((item) => item.id === listing.propertyId)
   const parkingTrust = property
-    ? calculatePropertyParkingTrust(property, property.reviews, mockUsers)
+    ? calculatePropertyParkingTrust(property, property.reviews, users)
     : null
   const reviews = listing.recentReviewIds
     .map((reviewId) => allReviews.find((review) => review.id === reviewId))
@@ -97,7 +97,7 @@ const HostListingCard = ({ listing }: HostListingCardProps) => {
             <h4 className="text-lg font-semibold">Recent rider reviews</h4>
             {reviews.length > 0 ? (
               reviews.map((review) => {
-                const reviewer = mockUsers.find((user) => user.id === review!.userId)
+                const reviewer = users.find((user) => user.id === review!.userId)
 
                 return (
                   <div

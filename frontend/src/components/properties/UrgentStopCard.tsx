@@ -9,7 +9,6 @@ import { Link } from 'react-router-dom'
 
 import Pill from '@/components/ui/pill'
 import Tag from '@/components/ui/tag'
-import { mockUsers } from '@/data/users/mockUsers'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { formatCurrency } from '@/lib/helper'
 import {
@@ -18,16 +17,17 @@ import {
   getParkingVerificationLabel,
 } from '@/lib/parkingTrust'
 import { cn } from '@/lib/utils'
-import type { Property } from '@/types'
+import type { Property, User } from '@/types'
 
 type UrgentStopCardProps = {
   property: Property
+  users: User[]
   distanceInKm: number
 }
 
-const UrgentStopCard = ({ property, distanceInKm }: UrgentStopCardProps) => {
+const UrgentStopCard = ({ property, users, distanceInKm }: UrgentStopCardProps) => {
   const navigateHref = `https://www.google.com/maps/dir/?api=1&destination=${property.coordinates.lat},${property.coordinates.lng}`
-  const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, mockUsers)
+  const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, users)
 
   return (
     <article className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-card/90 shadow-[0_24px_70px_-40px_rgba(15,23,42,0.5)] backdrop-blur">

@@ -5,30 +5,16 @@ import HomeFilters from '@/components/properties/HomeFilters'
 import PropertyCard from '@/components/properties/PropertyCard'
 import PropertiesSearchBar from '@/components/properties/PropertiesSearchBar'
 import PropertiesToolbar from '@/components/properties/PropertiesToolbar'
-import { mockProperties } from '@/data/properties/mockProperties'
-import { mockUser } from '@/data/users/mockUser'
+import { useAppBootstrap } from '@/lib/api'
+import { FALLBACK_USER_LOCATION } from '@/lib/constants'
 import { getDistanceInKm } from '@/lib/distance'
 import { calculatePropertyParkingTrust } from '@/lib/parkingTrust'
-import { mockUsers } from '@/data/users/mockUsers'
-import type { Property } from '@/types'
-import type { PropertyFilters } from '@/types'
-import type { PropertySearch } from '@/types'
+import type { Property, PropertyFilters, PropertySearch, User } from '@/types'
 
-const MIN_PRICE = Math.min(
-  ...mockProperties.map((property) => property.nightlyPrice),
-)
-const MAX_PRICE = Math.max(
-  ...mockProperties.map((property) => property.nightlyPrice),
-)
 const PRICE_STEP = 10
-const MAX_DISTANCE = Math.ceil(
-  Math.max(
-    ...mockProperties.map((property) =>
-      getDistanceInKm(mockUser.location.coordinates, property.coordinates),
-    ),
-  ),
-)
 const DISTANCE_STEP = 5
+const EMPTY_PROPERTIES: Property[] = []
+const EMPTY_USERS: User[] = []
 
 type SortMode = 'distance' | 'price-asc' | 'price-desc'
 
@@ -49,8 +35,26 @@ const defaultPropertySearch: PropertySearch = {
 
 const HomePage = () => {
   const navigate = useNavigate()
-  const [maxPrice, setMaxPrice] = useState(MAX_PRICE)
-  const [maxDistance, setMaxDistance] = useState(MAX_DISTANCE)
+  const { data, isLoading, isError } = useAppBootstrap()
+  const properties = data?.properties ?? EMPTY_PROPERTIES
+  const users = data?.users ?? EMPTY_USERS
+  const minPrice = properties.length
+    ? Math.min(...properties.map((property) => property.nightlyPrice))
+    : 0
+  const maxPriceLimit = properties.length
+    ? Math.max(...properties.map((property) => property.nightlyPrice))
+    : 0
+  const maxDistanceLimit = properties.length
+    ? Math.ceil(
+        Math.max(
+          ...properties.map((property) =>
+            getDistanceInKm(FALLBACK_USER_LOCATION.coordinates, property.coordinates),
+          ),
+        ),
+      )
+    : DISTANCE_STEP
+  const [maxPrice, setMaxPrice] = useState(maxPriceLimit)
+  const [maxDistance, setMaxDistance] = useState(maxDistanceLimit)
   const [sortMode, setSortMode] = useState<SortMode>('distance')
   const [propertySearch, setPropertySearch] = useState<PropertySearch>(
     defaultPropertySearch,
@@ -58,21 +62,24 @@ const HomePage = () => {
   const [advancedFilters, setAdvancedFilters] = useState<PropertyFilters>(
     defaultAdvancedFilters,
   )
+  const effectiveMaxPrice = maxPrice === 0 ? maxPriceLimit : maxPrice
+  const effectiveMaxDistance =
+    maxDistance === DISTANCE_STEP ? maxDistanceLimit : maxDistance
 
   const handlePropertyDetails = (property: Property) => {
     navigate(`/properties/${property.id}`)
   }
 
-  const visibleProperties = mockProperties
+  const visibleProperties = properties
     .map((property) => ({
       property,
       parkingTrust: calculatePropertyParkingTrust(
         property,
         property.reviews,
-        mockUsers,
+        users,
       ),
       distanceInKm: getDistanceInKm(
-        mockUser.location.coordinates,
+        FALLBACK_USER_LOCATION.coordinates,
         property.coordinates,
       ),
     }))
@@ -83,8 +90,8 @@ const HomePage = () => {
             .includes(propertySearch.town.trim().toLowerCase())
         : true,
     )
-    .filter(({ property }) => property.nightlyPrice <= maxPrice)
-    .filter(({ distanceInKm }) => distanceInKm <= maxDistance)
+    .filter(({ property }) => property.nightlyPrice <= effectiveMaxPrice)
+    .filter(({ distanceInKm }) => distanceInKm <= effectiveMaxDistance)
     .filter(({ property }) => property.guests >= propertySearch.guests)
     .filter(({ property }) => property.bedrooms >= propertySearch.rooms)
     .filter(({ property }) =>
@@ -134,6 +141,14 @@ const HomePage = () => {
         ? 'Price low to high'
         : 'Price high to low'
 
+  if (isLoading) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Loading stays...</main>
+  }
+
+  if (isError) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Could not load stays from the backend.</main>
+  }
+
   return (
     <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
       <section className="mb-6 rounded-[2rem] border border-amber-500/20 bg-gradient-to-r from-amber-500/12 via-background/95 to-background/95 p-6 shadow-[0_24px_70px_-40px_rgba(245,158,11,0.35)] backdrop-blur sm:p-8">
@@ -165,20 +180,20 @@ const HomePage = () => {
         <div className="flex flex-col gap-10 lg:h-full lg:flex-row">
           <aside className="lg:w-[320px] lg:shrink-0">
             <HomeFilters
-              maxDistance={maxDistance}
-              maxPrice={maxPrice}
-              maxDistanceLimit={MAX_DISTANCE}
-              minPriceLimit={MIN_PRICE}
-              maxPriceLimit={MAX_PRICE}
+              maxPrice={effectiveMaxPrice}
+              maxDistance={effectiveMaxDistance}
+              maxDistanceLimit={maxDistanceLimit}
+              minPriceLimit={minPrice}
+              maxPriceLimit={maxPriceLimit}
               distanceStep={DISTANCE_STEP}
               priceStep={PRICE_STEP}
-              locationLabel={mockUser.location.label}
+              locationLabel={FALLBACK_USER_LOCATION.label}
               advancedFilters={advancedFilters}
               onMaxDistanceChange={setMaxDistance}
               onMaxPriceChange={setMaxPrice}
               onAdvancedFiltersChange={setAdvancedFilters}
-              onResetDistance={() => setMaxDistance(MAX_DISTANCE)}
-              onResetPrice={() => setMaxPrice(MAX_PRICE)}
+              onResetDistance={() => setMaxDistance(maxDistanceLimit)}
+              onResetPrice={() => setMaxPrice(maxPriceLimit)}
               onResetAdvancedFilters={() =>
                 setAdvancedFilters(defaultAdvancedFilters)
               }
@@ -194,9 +209,9 @@ const HomePage = () => {
 
               <PropertiesToolbar
                 visibleCount={visibleProperties.length}
-                locationLabel={mockUser.location.label}
-                maxPrice={maxPrice}
-                maxDistance={maxDistance}
+                locationLabel={FALLBACK_USER_LOCATION.label}
+                maxPrice={effectiveMaxPrice}
+                maxDistance={effectiveMaxDistance}
                 sortMode={sortMode}
                 onSortChange={setSortMode}
               />
@@ -212,6 +227,7 @@ const HomePage = () => {
                     <PropertyCard
                       key={property.id}
                       property={property}
+                      users={users}
                       distanceInKm={distanceInKm}
                       onAction={handlePropertyDetails}
                     />

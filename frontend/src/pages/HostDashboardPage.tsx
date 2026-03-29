@@ -1,17 +1,36 @@
 import { ChevronLeft, Eye, Heart, MapPinned, PhoneCall, Route } from 'lucide-react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 
+import { useAuth } from '@/components/auth/useAuth'
 import HostListingCard from '@/components/host/HostListingCard'
 import HostMetricCard from '@/components/host/HostMetricCard'
-import { mockHostListings } from '@/data/hosts/mockHostListings'
-import { mockCurrentUserId, mockUsers } from '@/data/users/mockUsers'
+import { useAppBootstrap } from '@/lib/api'
+import { useCurrentAppUser } from '@/lib/auth'
 
 const HostDashboardPage = () => {
   const [searchParams] = useSearchParams()
-  const host = mockUsers.find((user) => user.id === mockCurrentUserId)
-  const listings = mockHostListings.filter(
-    (listing) => listing.hostUserId === mockCurrentUserId,
+  const { authUser } = useAuth()
+  const { data, isLoading, isError } = useAppBootstrap()
+  const users = data?.users ?? []
+  const properties = data?.properties ?? []
+  const hostListings = data?.hostListings ?? []
+  const currentUser = useCurrentAppUser(users)
+  const host = currentUser
+  const listings = hostListings.filter(
+    (listing) => listing.hostUserId === currentUser?.id,
   )
+
+  if (isLoading) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Loading host dashboard...</main>
+  }
+
+  if (isError) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Could not load host dashboard.</main>
+  }
+
+  if (!authUser || !currentUser) {
+    return <Navigate to="/login" replace />
+  }
 
   const totals = listings.reduce(
     (accumulator, listing) => ({
@@ -144,7 +163,7 @@ const HostDashboardPage = () => {
 
           <div className="space-y-5">
             {listings.map((listing) => (
-              <HostListingCard key={listing.id} listing={listing} />
+              <HostListingCard key={listing.id} listing={listing} properties={properties} users={users} />
             ))}
           </div>
         </section>

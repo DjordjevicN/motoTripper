@@ -3,14 +3,40 @@ import { MailCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
+import { supabase } from '@/lib/supabase'
 
 const ResetPasswordPage = () => {
+  const { pushToast } = useToast()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setIsSubmitting(true)
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/login`,
+    })
+
+    setIsSubmitting(false)
+
+    if (error) {
+      pushToast({
+        tone: 'error',
+        title: 'Could not send reset email',
+        description: error.message,
+      })
+      return
+    }
+
     setSent(true)
+    pushToast({
+      tone: 'success',
+      title: 'Reset email sent',
+      description: `Password reset instructions were sent to ${email.trim()}.`,
+    })
   }
 
   return (
@@ -29,22 +55,23 @@ const ResetPasswordPage = () => {
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <label className="block space-y-2">
             <span className="text-sm text-muted-foreground">Email address</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-xl border border-border/70 bg-background px-4 py-3"
-            />
-          </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+                className="w-full rounded-xl border border-border/70 bg-background px-4 py-3"
+              />
+            </label>
 
-          <Button type="submit">
+          <Button type="submit" disabled={isSubmitting}>
             <MailCheck className="size-4" />
-            Send reset link
+            {isSubmitting ? 'Sending...' : 'Send reset link'}
           </Button>
 
           {sent ? (
             <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-              Reset instructions sent to {email || 'your email'} in this mock flow.
+              Reset instructions sent to {email || 'your email'}.
             </p>
           ) : null}
 

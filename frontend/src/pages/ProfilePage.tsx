@@ -1,11 +1,21 @@
-import { Bike, ChevronLeft, MapPin, ShieldCheck, Star, Waypoints } from 'lucide-react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import {
+  Bike,
+  ChevronLeft,
+  LogOut,
+  MapPin,
+  ShieldCheck,
+  Star,
+  Waypoints,
+} from 'lucide-react'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
+import { useAuth } from '@/components/auth/useAuth'
 import ProfileStatCard from '@/components/profile/ProfileStatCard'
+import { useToast } from '@/components/ui/use-toast'
 import Pill from '@/components/ui/pill'
 import Tag from '@/components/ui/tag'
-import { mockProperties } from '@/data/properties/mockProperties'
-import { mockCurrentUserId, mockUsers } from '@/data/users/mockUsers'
+import { useAppBootstrap } from '@/lib/api'
+import { useCurrentAppUser } from '@/lib/auth'
 import {
   formatContributionDate,
   getContributionSupportText,
@@ -13,17 +23,36 @@ import {
   getUserProfileSummary,
 } from '@/lib/profile'
 import { getAllPropertyReviews } from '@/lib/reviews'
-import { getResolvedUser } from '@/lib/userProfileStorage'
 
 const ProfilePage = () => {
+  const navigate = useNavigate()
   const { userId } = useParams()
-  const allReviews = getAllPropertyReviews(mockProperties)
+  const { signOut } = useAuth()
+  const { pushToast } = useToast()
+  const { data, isLoading, isError } = useAppBootstrap()
+  const properties = data?.properties ?? []
+  const users = data?.users ?? []
+  const currentUser = useCurrentAppUser(users)
+  const targetUserId = userId ?? currentUser?.id
+  const allReviews = getAllPropertyReviews(properties)
   const profileSummary = getUserProfileSummary(
-    userId ?? mockCurrentUserId,
-    mockUsers,
+    targetUserId ?? '',
+    users,
     allReviews,
-    mockProperties,
+    properties,
   )
+
+  if (isLoading) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Loading rider profile...</main>
+  }
+
+  if (isError) {
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Could not load rider profile.</main>
+  }
+
+  if (!targetUserId) {
+    return <Navigate to="/login" replace />
+  }
 
   if (!profileSummary) {
     return <Navigate to="/" replace />
@@ -31,7 +60,7 @@ const ProfilePage = () => {
 
   const { user, trustSummary, recentContributions, savedProperties, savedUrgentStops, recentViewedProperties } =
     profileSummary
-  const resolvedUser = getResolvedUser(user.id) ?? user
+  const resolvedUser = user
 
   const identityRows = [
     ['Riding style', resolvedUser.ridingStyle ?? 'Not set'],
@@ -253,7 +282,7 @@ const ProfilePage = () => {
           </article>
 
           <div className="space-y-6">
-            {user.id === mockCurrentUserId ? (
+            {currentUser && user.id === currentUser.id ? (
               <article className="rounded-[1.75rem] border border-border/70 bg-card/85 p-5">
                 <h2 className="text-xl font-semibold">Profile actions</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -273,6 +302,22 @@ const ProfilePage = () => {
                     >
                       Add community-posted stay
                     </Link>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await signOut()
+                        pushToast({
+                          tone: 'success',
+                          title: 'Logged out',
+                          description: 'Your rider session has been closed.',
+                        })
+                        navigate('/login', { replace: true })
+                      }}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-rose-500/25 bg-rose-500/10 px-5 text-sm font-medium text-rose-200 transition-opacity hover:opacity-90"
+                    >
+                      <LogOut className="size-4" />
+                      Log out
+                    </button>
                   </div>
                 </div>
               </article>
