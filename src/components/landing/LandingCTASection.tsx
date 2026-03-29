@@ -30,6 +30,13 @@ const LandingCTASection = () => {
           Explore the app
         </Link>
       </div>
+      <p className="mt-5 text-sm text-muted-foreground">
+        Want to understand how trust, reviews, and verified parking work?{' '}
+        <Link to="/rules" className="text-primary hover:opacity-80">
+          Read platform rules
+        </Link>
+        .
+      </p>
     </section>
   )
 }

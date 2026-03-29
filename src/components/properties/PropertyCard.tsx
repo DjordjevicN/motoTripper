@@ -48,6 +48,17 @@ const PropertyCard = ({
             <Pill variant="secondary">
               {property.guests} guests
             </Pill>
+            <Tag
+              className={
+                property.listingSource === 'community'
+                  ? 'border-violet-500/35 bg-violet-500/10 text-violet-300'
+                  : 'border-emerald-500/35 bg-emerald-500/10 text-emerald-300'
+              }
+            >
+              {property.listingSource === 'community'
+                ? 'Community posted'
+                : 'Official host listing'}
+            </Tag>
           </div>
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">
@@ -78,7 +89,13 @@ const PropertyCard = ({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {[...parkingBadges.slice(1), ...property.tags].map((tag) => (
+          {[
+            ...(property.listingSource === 'community'
+              ? ['Direct website', 'Community added']
+              : []),
+            ...parkingBadges.slice(1),
+            ...property.tags,
+          ].map((tag) => (
             <Tag key={tag}>
               {tag}
             </Tag>

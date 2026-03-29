@@ -96,6 +96,17 @@ const PropertyDetails = () => {
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
+              <Tag
+                className={
+                  property.listingSource === 'community'
+                    ? 'border-violet-500/35 bg-violet-500/10 text-violet-300'
+                    : 'border-emerald-500/35 bg-emerald-500/10 text-emerald-300'
+                }
+              >
+                {property.listingSource === 'community'
+                  ? 'Community posted'
+                  : 'Official host listing'}
+              </Tag>
               <Tag className={getParkingBadgeVariant(parkingTrust.verificationLevel)}>
                 {getParkingVerificationLabel(parkingTrust.verificationLevel)}
               </Tag>
@@ -111,6 +122,14 @@ const PropertyDetails = () => {
                 <Tag key={tag}>{tag}</Tag>
               ))}
             </div>
+
+            {property.listingSource === 'community' ? (
+              <div className="mt-5 rounded-[1.5rem] border border-violet-500/25 bg-violet-500/10 p-4 text-sm leading-6 text-violet-100/90">
+                This place was added by a rider, not by the property owner. Use the
+                direct website and phone details below, and expect the listing to stay
+                clearly marked as community-posted until an official host claims it.
+              </div>
+            ) : null}
           </div>
 
           <section className="overflow-hidden rounded-[2rem] border border-border/70 bg-card/80 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.35)]">
@@ -438,12 +457,33 @@ const PropertyDetails = () => {
                 </p>
               </div>
 
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                Reserve rider stay
-              </button>
+              {property.listingSource === 'community' ? (
+                <div className="space-y-3">
+                  {property.websiteUrl ? (
+                    <a
+                      href={property.websiteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                    >
+                      Visit property website
+                    </a>
+                  ) : null}
+                  <a
+                    href={`tel:${property.phone}`}
+                    className="inline-flex w-full items-center justify-center rounded-xl border border-border/70 bg-background px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+                  >
+                    Call property directly
+                  </a>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  Reserve rider stay
+                </button>
+              )}
             </div>
           </div>
         </aside>

@@ -40,6 +40,7 @@ export type PreferredStopStyle =
   | 'comfort'
   | 'secure-parking-first'
   | 'mixed'
+export type PropertyListingSource = 'official' | 'community'
 
 export type PropertyReview = {
   id: string
@@ -92,8 +93,11 @@ export type User = {
 export type Property = {
   id: string
   title: string
+  listingSource: PropertyListingSource
   location: string
   locationLabel: string
+  websiteUrl?: string
+  submittedByUserId?: string
   coordinates: Coordinates
   description: string
   image: string
@@ -225,4 +229,62 @@ export type PropertyParkingTrust = {
   parkingSafetyScore: number
   verificationLevel: ParkingVerificationLevel
   hasVerifiedSafeParking: boolean
+}
+
+export type HostOnboardingDraft = {
+  propertyName: string
+  location: string
+  hostName: string
+  hostEmail: string
+  propertyType: 'apartment' | 'house' | 'guesthouse' | 'motel' | 'cabin'
+  unitCount: string
+  nightlyPrice: string
+  availableTonight: boolean
+  lateCheckIn: boolean
+  parkingType: 'private-garage' | 'covered-courtyard' | 'driveway' | 'street'
+  parkingSpaces: string
+  coveredParking: boolean
+  cameraCoverage: boolean
+  gatedAccess: boolean
+  trailerFriendly: boolean
+  motoWashStation: boolean
+  gearDryingArea: boolean
+  photoProofReady: boolean
+  summary: string
+  standoutFeatures: string
+}
+
+export type HostListingMetrics = {
+  views: number
+  likes: number
+  reviewCount: number
+  callClicks: number
+  navigateClicks: number
+}
+
+export type HostPropertyListing = {
+  id: string
+  hostUserId: string
+  propertyId: string
+  propertyTitle: string
+  location: string
+  coverImage: string
+  unitCount: number
+  status: 'live' | 'draft' | 'pending-review'
+  nightlyPrice: number
+  availableTonight: boolean
+  metrics: HostListingMetrics
+  recentReviewIds: string[]
+}
+
+export type CommunityPropertyDraft = {
+  propertyName: string
+  location: string
+  websiteUrl: string
+  phone: string
+  parkingNotes: string
+  summary: string
+  coveredParking: boolean
+  lateCheckIn: boolean
+  hasRiderPhotoProof: boolean
 }

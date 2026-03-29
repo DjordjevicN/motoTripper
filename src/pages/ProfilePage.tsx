@@ -260,12 +260,20 @@ const ProfilePage = () => {
                   Update your motorcycle, riding style, and practical trip preferences.
                 </p>
                 <div className="mt-4">
-                  <Link
-                    to={`/profile/${user.id}/edit`}
-                    className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-                  >
-                    Edit profile
-                  </Link>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      to={`/profile/${user.id}/edit`}
+                      className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                    >
+                      Edit profile
+                    </Link>
+                    <Link
+                      to="/community/onboarding"
+                      className="inline-flex h-10 items-center justify-center rounded-md border border-border/70 bg-background px-5 text-sm font-medium transition-opacity hover:opacity-90"
+                    >
+                      Add community-posted stay
+                    </Link>
+                  </div>
                 </div>
               </article>
             ) : null}

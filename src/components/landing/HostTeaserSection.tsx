@@ -22,7 +22,7 @@ const HostTeaserSection = () => {
           </p>
           <div className="mt-5">
             <Link
-              to="/signup"
+              to="/host/onboarding"
               className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}
             >
               Join as a founding host

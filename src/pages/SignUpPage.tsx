@@ -81,6 +81,21 @@ const SignUpPage = () => {
                 Log in
               </Link>
             </p>
+
+            <p className="text-sm text-muted-foreground">
+              By creating an account, you agree to follow the platform{' '}
+              <Link to="/rules" className="text-primary hover:opacity-80">
+                rules and trust guidelines
+              </Link>
+              .
+            </p>
+
+            <div className="rounded-[1.5rem] border border-border/70 bg-background/55 p-4 text-sm text-muted-foreground">
+              Listing a property instead?
+              <Link to="/host/onboarding" className="ml-2 text-primary hover:opacity-80">
+                Start host onboarding
+              </Link>
+            </div>
           </form>
         </div>
       </section>
