@@ -1,0 +1,261 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TrustTier {
+  UNVERIFIED
+  TRUSTED
+  HIGH_TRUST
+  ELITE
+}
+
+enum RidingStyle {
+  TOURING
+  SPORT
+  ADVENTURE
+  COMMUTER
+  MIXED
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  EXPERIENCED
+  VETERAN
+}
+
+enum MotorcycleType {
+  SPORT
+  NAKED
+  TOURING
+  ADVENTURE
+  CRUISER
+  SCOOTER
+  OTHER
+}
+
+enum TypicalTripType {
+  DAY_RIDES
+  WEEKEND_TRIPS
+  MULTI_DAY_TOURS
+  MIXED
+}
+
+enum PreferredStopStyle {
+  BUDGET
+  COMFORT
+  SECURE_PARKING_FIRST
+  MIXED
+}
+
+enum PropertyListingSource {
+  OFFICIAL
+  COMMUNITY
+}
+
+enum PropertyStatus {
+  DRAFT
+  LIVE
+  PENDING_REVIEW
+  ARCHIVED
+}
+
+enum PlatformRole {
+  RIDER
+  HOST
+  ADMIN
+}
+
+model User {
+  id                        String              @id @default(cuid())
+  email                     String              @unique
+  name                      String
+  avatarUrl                 String?
+  bio                       String?
+  locationLabel             String?
+  reviewCount               Int                 @default(0)
+  parkingConfirmationCount  Int                 @default(0)
+  photoContributionCount    Int                 @default(0)
+  helpfulVotesReceived      Int                 @default(0)
+  accountAgeDays            Int                 @default(0)
+  trustScore                Int                 @default(0)
+  trustTier                 TrustTier           @default(UNVERIFIED)
+  platformRole              PlatformRole        @default(RIDER)
+  xp                        Int?
+  levelLabel                String?
+  savedPropertyIds          String[]
+  savedUrgentStopPropertyIds String[]
+  recentViewedPropertyIds   String[]
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  riderProfile              RiderProfile?
+  motorcycle                Motorcycle?
+  reviews                   Review[]
+  parkingConfirmations      ParkingConfirmation[]
+  hostedListings            HostListing[]       @relation("HostListings")
+  communitySubmittedListings CommunityListing[] @relation("CommunityListings")
+}
+
+model RiderProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  ridingStyle        RidingStyle?
+  experienceLevel    ExperienceLevel?
+  typicalTripType    TypicalTripType?
+  preferredStopStyle PreferredStopStyle?
+  memberSince        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Motorcycle {
+  id        String          @id @default(cuid())
+  userId    String          @unique
+  brand     String
+  model     String
+  year      Int?
+  type      MotorcycleType?
+  engineCc  Int?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Property {
+  id                    String                @id @default(cuid())
+  title                 String
+  description           String
+  locationLabel         String
+  city                  String?
+  country               String?
+  phone                 String?
+  websiteUrl            String?
+  latitude              Float
+  longitude             Float
+  nightlyPrice          Decimal               @db.Decimal(10, 2)
+  cleaningFee           Decimal               @db.Decimal(10, 2)
+  serviceFee            Decimal               @db.Decimal(10, 2)
+  rating                Float                 @default(0)
+  reviewCount           Int                   @default(0)
+  bedrooms              Int                   @default(1)
+  guests                Int                   @default(1)
+  verifiedRiderRecommended Boolean            @default(false)
+  roomsLeft             Int                   @default(0)
+  nextAvailableDate     String?
+  sleepingArrangement   Json?
+  availableTonight      Boolean               @default(false)
+  coveredParking        Boolean               @default(false)
+  trailerFriendly       Boolean               @default(false)
+  motoWashStation       Boolean               @default(false)
+  parkingSpaces         Int                   @default(0)
+  parkingSecurity       String?
+  wifiSpeedMbps         Int?
+  wifiNotes             String?
+  listingSource         PropertyListingSource
+  status                PropertyStatus        @default(DRAFT)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  images                PropertyImage[]
+  tags                  PropertyTag[]
+  amenities             PropertyAmenity[]
+  reviews               Review[]
+  parkingConfirmations  ParkingConfirmation[]
+  hostListing           HostListing?
+  communityListing      CommunityListing?
+}
+
+model PropertyImage {
+  id         String   @id @default(cuid())
+  propertyId String
+  url        String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model PropertyTag {
+  id         String   @id @default(cuid())
+  propertyId String
+  label      String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model PropertyAmenity {
+  id         String   @id @default(cuid())
+  propertyId String
+  label      String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id                      String   @id @default(cuid())
+  propertyId              String
+  userId                  String
+  rating                  Float
+  parkingSafetyRating     Float?
+  title                   String?
+  content                 String
+  helpfulVotes            Int      @default(0)
+  photos                  String[]
+  tripType                String?
+  safeParkingConfirmed    Boolean  @default(false)
+  coveredParkingConfirmed Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  property                Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parkingConfirmation     ParkingConfirmation?
+}
+
+model ParkingConfirmation {
+  id               String   @id @default(cuid())
+  propertyId       String
+  userId           String
+  reviewId         String?  @unique
+  isSafe           Boolean
+  isCovered        Boolean  @default(false)
+  notes            String?
+  photoEvidenceUrl String?
+  createdAt        DateTime @default(now())
+  property         Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review           Review?  @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@unique([propertyId, userId])
+}
+
+model HostListing {
+  id              String   @id @default(cuid())
+  propertyId      String   @unique
+  hostUserId      String
+  unitCount       Int      @default(1)
+  views           Int      @default(0)
+  likes           Int      @default(0)
+  callClicks      Int      @default(0)
+  navigateClicks  Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  hostUser        User     @relation("HostListings", fields: [hostUserId], references: [id], onDelete: Cascade)
+}
+
+model CommunityListing {
+  id                 String   @id @default(cuid())
+  propertyId         String   @unique
+  submittedByUserId  String
+  sourceWebsiteUrl   String?
+  sourcePhone        String?
+  parkingNotes       String?
+  lateCheckIn        Boolean  @default(false)
+  hasRiderPhotoProof Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  property           Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  submittedByUser    User     @relation("CommunityListings", fields: [submittedByUserId], references: [id], onDelete: Cascade)
+}
