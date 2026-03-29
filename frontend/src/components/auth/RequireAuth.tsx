@@ -8,7 +8,7 @@ const RequireAuth = () => {
 
   if (isLoading) {
     return (
-      <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+      <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
         Checking your rider session...
       </main>
     )

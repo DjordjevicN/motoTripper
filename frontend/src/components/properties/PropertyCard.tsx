@@ -27,6 +27,9 @@ const PropertyCard = ({
 }: PropertyCardProps) => {
   const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, users)
   const parkingBadges = deriveParkingBadges(parkingTrust)
+  const cardClassName = property.isPaidPromotionActive
+    ? 'rounded-[1.75rem] border border-amber-500/30 bg-[linear-gradient(135deg,rgba(245,158,11,0.12),rgba(15,23,42,0.92)_24%,rgba(15,23,42,0.9))] p-5 shadow-[0_24px_70px_-42px_rgba(245,158,11,0.34)] backdrop-blur transition-transform hover:-translate-y-0.5'
+    : 'rounded-[1.75rem] border border-border/70 bg-card/90 p-5 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.35)] backdrop-blur transition-transform hover:-translate-y-0.5'
 
   const cardContent = (
     <div className="flex flex-col gap-5 xl:flex-row xl:items-stretch xl:justify-between">
@@ -60,6 +63,11 @@ const PropertyCard = ({
                 ? 'Community posted'
                 : 'Official host listing'}
             </Tag>
+            {property.isPaidPromotionActive ? (
+              <Tag className="border-amber-500/35 bg-amber-500/10 text-amber-300">
+                Promoted stay
+              </Tag>
+            ) : null}
           </div>
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">
@@ -123,7 +131,7 @@ const PropertyCard = ({
       <button
         type="button"
         onClick={() => onAction(property)}
-        className="block w-full cursor-pointer rounded-[1.75rem] border border-border/70 bg-card/90 p-5 text-left shadow-[0_20px_60px_-40px_rgba(15,23,42,0.35)] backdrop-blur transition-transform hover:-translate-y-0.5"
+        className={`block w-full cursor-pointer text-left ${cardClassName}`}
       >
         {cardContent}
       </button>
@@ -131,7 +139,7 @@ const PropertyCard = ({
   }
 
   return (
-    <article className="rounded-[1.75rem] border border-border/70 bg-card/90 p-5 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.35)] backdrop-blur transition-transform hover:-translate-y-0.5">
+    <article className={cardClassName}>
       {cardContent}
     </article>
   )

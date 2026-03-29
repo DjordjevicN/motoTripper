@@ -39,7 +39,7 @@ const LandingPage = () => {
   }, [])
 
   return (
-    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
       <div className="space-y-16 sm:space-y-20">
         <LandingHero scrollY={scrollY} reducedMotion={reducedMotion} />
         <ProblemSection />

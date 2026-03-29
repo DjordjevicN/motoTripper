@@ -40,7 +40,7 @@ const ResetPasswordPage = () => {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-[calc(100%-40px)] max-w-none items-center py-8">
+    <main className="mx-auto flex min-h-screen w-[calc(100%-40px)] max-w-[1600px] items-center py-8">
       <section className="mx-auto w-full max-w-2xl rounded-[2rem] border border-border/70 bg-card/90 p-8 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.45)] sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
           Password reset

@@ -1,19 +1,35 @@
 import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeft,
   ChevronRight,
   CircleParking,
+  MessageSquarePlus,
   Mountain,
   ShieldCheck,
   Star,
+  ThumbsDown,
+  ThumbsUp,
+  Trash2,
   Wifi,
 } from 'lucide-react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import PropertyLocation from '@/components/properties/PropertyLocation'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import Pill from '@/components/ui/pill'
 import Tag from '@/components/ui/tag'
-import { useAppBootstrap } from '@/lib/api'
+import {
+  createReview,
+  deleteProperty,
+  deleteReview,
+  updateProperty,
+  useAppBootstrap,
+  voteForProperty,
+  voteForReview,
+} from '@/lib/api'
+import { useCurrentAppUser } from '@/lib/auth'
 import { FALLBACK_USER_LOCATION } from '@/lib/constants'
 import { getDistanceInKm } from '@/lib/distance'
 import { formatCurrency } from '@/lib/helper'
@@ -28,20 +44,225 @@ import { getAllPropertyReviews } from '@/lib/reviews'
 import { getUserTrustSummary } from '@/lib/trust'
 
 const PropertyDetails = () => {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { pushToast } = useToast()
   const { propertyId } = useParams()
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [isEditingProperty, setIsEditingProperty] = useState(false)
   const { data, isLoading, isError } = useAppBootstrap()
   const properties = data?.properties ?? []
   const users = data?.users ?? []
+  const currentUser = useCurrentAppUser(users)
 
   const property = properties.find((item) => item.id === propertyId)
+  const [reviewForm, setReviewForm] = useState({
+    title: '',
+    content: '',
+    rating: 5,
+    parkingSafetyRating: 5,
+    tripType: 'mixed',
+    safeParkingConfirmed: false,
+    coveredParkingConfirmed: false,
+  })
+  const [propertyForm, setPropertyForm] = useState({
+    title: '',
+    description: '',
+    locationLabel: '',
+    phone: '',
+    websiteUrl: '',
+  })
+
+  const invalidateApp = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['app-bootstrap'] })
+  }
+
+  const createReviewMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentUser || !property) {
+        throw new Error('You must be signed in to leave a review.')
+      }
+
+      return createReview({
+        actorUserId: currentUser.id,
+        propertyId: property.id,
+        ...reviewForm,
+      })
+    },
+    onSuccess: async () => {
+      await invalidateApp()
+      setReviewForm({
+        title: '',
+        content: '',
+        rating: 5,
+        parkingSafetyRating: 5,
+        tripType: 'mixed',
+        safeParkingConfirmed: false,
+        coveredParkingConfirmed: false,
+      })
+      pushToast({
+        tone: 'success',
+        title: 'Review added',
+        description: 'Your review is now part of this property.',
+      })
+    },
+    onError: (error) => {
+      pushToast({
+        tone: 'error',
+        title: 'Could not add review',
+        description: error instanceof Error ? error.message : 'Review failed.',
+      })
+    },
+  })
+
+  const updatePropertyMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentUser || !property) {
+        throw new Error('You are not allowed to update this property.')
+      }
+
+      return updateProperty(property.id, {
+        actorUserId: currentUser.id,
+        ...propertyForm,
+      })
+    },
+    onSuccess: async () => {
+      await invalidateApp()
+      setIsEditingProperty(false)
+      pushToast({
+        tone: 'success',
+        title: 'Property updated',
+        description: 'The listing details were updated successfully.',
+      })
+    },
+    onError: (error) => {
+      pushToast({
+        tone: 'error',
+        title: 'Could not update property',
+        description: error instanceof Error ? error.message : 'Update failed.',
+      })
+    },
+  })
+
+  const deletePropertyMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentUser || !property) {
+        throw new Error('You are not allowed to delete this property.')
+      }
+
+      return deleteProperty(property.id, currentUser.id)
+    },
+    onSuccess: async () => {
+      await invalidateApp()
+      pushToast({
+        tone: 'success',
+        title: 'Property deleted',
+        description: 'The listing has been removed.',
+      })
+      navigate('/', { replace: true })
+    },
+    onError: (error) => {
+      pushToast({
+        tone: 'error',
+        title: 'Could not delete property',
+        description: error instanceof Error ? error.message : 'Delete failed.',
+      })
+    },
+  })
+
+  const deleteReviewMutation = useMutation({
+    mutationFn: async (reviewId: string) => {
+      if (!currentUser) {
+        throw new Error('You are not allowed to delete this review.')
+      }
+
+      return deleteReview(reviewId, currentUser.id)
+    },
+    onSuccess: async () => {
+      await invalidateApp()
+      pushToast({
+        tone: 'success',
+        title: 'Review deleted',
+        description: 'The review was removed successfully.',
+      })
+    },
+    onError: (error) => {
+      pushToast({
+        tone: 'error',
+        title: 'Could not delete review',
+        description: error instanceof Error ? error.message : 'Delete failed.',
+      })
+    },
+  })
+
+  const propertyVoteMutation = useMutation({
+    mutationFn: async (value: 'up' | 'down') => {
+      if (!currentUser || !property) {
+        throw new Error('You must be signed in to vote.')
+      }
+
+      return voteForProperty(property.id, {
+        actorUserId: currentUser.id,
+        value,
+      })
+    },
+    onSuccess: async () => {
+      await invalidateApp()
+      pushToast({
+        tone: 'success',
+        title: 'Property vote saved',
+        description: 'Your vote now helps other riders judge this stay faster.',
+      })
+    },
+    onError: (error) => {
+      pushToast({
+        tone: 'error',
+        title: 'Could not save property vote',
+        description: error instanceof Error ? error.message : 'Vote failed.',
+      })
+    },
+  })
+
+  const reviewVoteMutation = useMutation({
+    mutationFn: async ({
+      reviewId,
+      value,
+    }: {
+      reviewId: string
+      value: 'up' | 'down'
+    }) => {
+      if (!currentUser) {
+        throw new Error('You must be signed in to vote.')
+      }
+
+      return voteForReview(reviewId, {
+        actorUserId: currentUser.id,
+        value,
+      })
+    },
+    onSuccess: async () => {
+      await invalidateApp()
+      pushToast({
+        tone: 'success',
+        title: 'Review vote saved',
+        description: 'Your vote was added successfully.',
+      })
+    },
+    onError: (error) => {
+      pushToast({
+        tone: 'error',
+        title: 'Could not save review vote',
+        description: error instanceof Error ? error.message : 'Vote failed.',
+      })
+    },
+  })
 
   if (isLoading) {
-    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Loading property...</main>
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">Loading property...</main>
   }
 
   if (isError) {
-    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Could not load property details.</main>
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">Could not load property details.</main>
   }
 
   if (!property) {
@@ -55,9 +276,42 @@ const PropertyDetails = () => {
   const allReviews = getAllPropertyReviews(properties)
   const parkingTrust = calculatePropertyParkingTrust(property, property.reviews, users)
   const parkingBadges = deriveParkingBadges(parkingTrust)
-
+  const canManageProperty = Boolean(
+    currentUser &&
+      (currentUser.platformRole === 'admin' ||
+        property.hostUserId === currentUser.id ||
+        property.submittedByUserId === currentUser.id),
+  )
+  const canLeaveReview = Boolean(
+    currentUser && !currentUser.isBanned && currentUser.canLeaveReviews !== false,
+  )
   const totalNightlyCost =
     property.nightlyPrice + property.cleaningFee + property.serviceFee
+  const currentPropertyVote = currentUser
+    ? property.votes?.find((vote) => vote.userId === currentUser.id)?.value
+    : undefined
+
+  const handlePropertyVote = (value: 'up' | 'down') => {
+    if (!currentUser) {
+      pushToast({
+        tone: 'info',
+        title: 'Sign in to vote',
+        description: 'You need to be signed in before you can vote on a stay.',
+      })
+      return
+    }
+
+    if (currentPropertyVote === value) {
+      pushToast({
+        tone: 'info',
+        title: 'Vote already recorded',
+        description: `You already gave this property a ${value} vote.`,
+      })
+      return
+    }
+
+    propertyVoteMutation.mutate(value)
+  }
 
   const goToPreviousImage = () => {
     setActiveImageIndex((current) =>
@@ -72,7 +326,7 @@ const PropertyDetails = () => {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
       <div className="mb-6">
         <Link
           to="/"
@@ -131,6 +385,37 @@ const PropertyDetails = () => {
               {property.tags.map((tag) => (
                 <Tag key={tag}>{tag}</Tag>
               ))}
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-3 rounded-[1.5rem] border border-border/70 bg-background/40 p-4">
+              <div>
+                <p className="text-sm font-medium">Rider vote</p>
+                <p className="text-xs text-muted-foreground">
+                  Quick signal for riders who do not want to write a full review.
+                </p>
+              </div>
+              <div className="ml-auto flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={currentPropertyVote === 'up' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handlePropertyVote('up')}
+                  disabled={propertyVoteMutation.isPending}
+                >
+                  <ThumbsUp className="size-4" />
+                  {property.upvoteCount ?? 0}
+                </Button>
+                <Button
+                  type="button"
+                  variant={currentPropertyVote === 'down' ? 'destructive' : 'outline'}
+                  size="sm"
+                  onClick={() => handlePropertyVote('down')}
+                  disabled={propertyVoteMutation.isPending}
+                >
+                  <ThumbsDown className="size-4" />
+                  {property.downvoteCount ?? 0}
+                </Button>
+              </div>
             </div>
 
             {property.listingSource === 'community' ? (
@@ -322,6 +607,137 @@ const PropertyDetails = () => {
               </div>
             </div>
 
+            <div className="mt-5 rounded-[1.5rem] border border-border/70 bg-background/60 p-4">
+              <div className="mb-4 flex items-center gap-2">
+                <MessageSquarePlus className="size-5 text-primary" />
+                <h3 className="text-lg font-semibold">Leave a review</h3>
+              </div>
+              {!currentUser ? (
+                <p className="text-sm text-muted-foreground">
+                  <Link to="/login" className="text-primary hover:opacity-80">
+                    Sign in
+                  </Link>{' '}
+                  to comment on this listing.
+                </p>
+              ) : canLeaveReview ? (
+                <form
+                  className="grid gap-4 md:grid-cols-2"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    createReviewMutation.mutate()
+                  }}
+                >
+                  <label className="block space-y-2 md:col-span-2">
+                    <span className="text-sm text-muted-foreground">Title</span>
+                    <input
+                      value={reviewForm.title}
+                      onChange={(event) =>
+                        setReviewForm((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                    />
+                  </label>
+                  <label className="block space-y-2 md:col-span-2">
+                    <span className="text-sm text-muted-foreground">Comment</span>
+                    <textarea
+                      rows={4}
+                      value={reviewForm.content}
+                      onChange={(event) =>
+                        setReviewForm((current) => ({
+                          ...current,
+                          content: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                    />
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm text-muted-foreground">Overall rating</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={reviewForm.rating}
+                      onChange={(event) =>
+                        setReviewForm((current) => ({
+                          ...current,
+                          rating: Number(event.target.value),
+                        }))
+                      }
+                      className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                    />
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm text-muted-foreground">Parking rating</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={reviewForm.parkingSafetyRating}
+                      onChange={(event) =>
+                        setReviewForm((current) => ({
+                          ...current,
+                          parkingSafetyRating: Number(event.target.value),
+                        }))
+                      }
+                      className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                    />
+                  </label>
+                  <label className="block space-y-2 md:col-span-2">
+                    <span className="text-sm text-muted-foreground">Trip type</span>
+                    <input
+                      value={reviewForm.tripType}
+                      onChange={(event) =>
+                        setReviewForm((current) => ({
+                          ...current,
+                          tripType: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                    />
+                  </label>
+                  <label className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={reviewForm.safeParkingConfirmed}
+                      onChange={(event) =>
+                        setReviewForm((current) => ({
+                          ...current,
+                          safeParkingConfirmed: event.target.checked,
+                        }))
+                      }
+                    />
+                    Safe parking confirmed
+                  </label>
+                  <label className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={reviewForm.coveredParkingConfirmed}
+                      onChange={(event) =>
+                        setReviewForm((current) => ({
+                          ...current,
+                          coveredParkingConfirmed: event.target.checked,
+                        }))
+                      }
+                    />
+                    Covered parking confirmed
+                  </label>
+                  <div className="md:col-span-2">
+                    <Button type="submit" disabled={createReviewMutation.isPending}>
+                      {createReviewMutation.isPending ? 'Posting...' : 'Post review'}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <p className="text-sm text-amber-200">
+                  Your account is currently restricted from leaving reviews.
+                </p>
+              )}
+            </div>
+
             <div className="mt-5 grid gap-4">
               {property.reviews.map((review) => (
                 (() => {
@@ -330,6 +746,34 @@ const PropertyDetails = () => {
                     allReviews,
                     users,
                   )
+                  const currentReviewVote = currentUser
+                    ? review.votes?.find((vote) => vote.userId === currentUser.id)?.value
+                    : undefined
+                  const handleReviewVote = (value: 'up' | 'down') => {
+                    if (!currentUser) {
+                      pushToast({
+                        tone: 'info',
+                        title: 'Sign in to vote',
+                        description:
+                          'You need to be signed in before you can vote on a review.',
+                      })
+                      return
+                    }
+
+                    if (currentReviewVote === value) {
+                      pushToast({
+                        tone: 'info',
+                        title: 'Vote already recorded',
+                        description: `You already gave this review a ${value} vote.`,
+                      })
+                      return
+                    }
+
+                    reviewVoteMutation.mutate({
+                      reviewId: review.id,
+                      value,
+                    })
+                  }
 
                   return (
                     <article
@@ -370,6 +814,18 @@ const PropertyDetails = () => {
                           <Pill className="bg-primary/15 text-primary">
                             Parking {review.parkingSafetyRating}/5
                           </Pill>
+                          {currentUser &&
+                          (currentUser.platformRole === 'admin' ||
+                            currentUser.id === review.userId) ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteReviewMutation.mutate(review.id)}
+                            >
+                              <Trash2 className="size-4" />
+                              Delete
+                            </Button>
+                          ) : null}
                         </div>
                       </div>
 
@@ -394,6 +850,30 @@ const PropertyDetails = () => {
                           {review.helpfulVotes} helpful vote
                           {review.helpfulVotes === 1 ? '' : 's'}
                         </Tag>
+                        <div className="ml-auto flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={currentReviewVote === 'up' ? 'default' : 'outline'}
+                            onClick={() => handleReviewVote('up')}
+                            disabled={reviewVoteMutation.isPending}
+                          >
+                            <ThumbsUp className="size-4" />
+                            {review.upvoteCount ?? 0}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={
+                              currentReviewVote === 'down' ? 'destructive' : 'outline'
+                            }
+                            onClick={() => handleReviewVote('down')}
+                            disabled={reviewVoteMutation.isPending}
+                          >
+                            <ThumbsDown className="size-4" />
+                            {review.downvoteCount ?? 0}
+                          </Button>
+                        </div>
                       </div>
 
                       {trustSummary ? (
@@ -423,6 +903,127 @@ const PropertyDetails = () => {
         </div>
 
         <aside className="space-y-4">
+          {canManageProperty ? (
+            <div className="rounded-[2rem] border border-amber-500/25 bg-amber-500/10 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
+                    Listing controls
+                  </p>
+                  <h2 className="mt-2 text-xl font-semibold">Manage this property</h2>
+                </div>
+                <Tag className="border-amber-500/35 bg-amber-500/10 text-amber-300">
+                  {currentUser?.platformRole === 'admin' ? 'Admin access' : 'Owner access'}
+                </Tag>
+              </div>
+
+              {isEditingProperty ? (
+                <form
+                  className="mt-4 space-y-3"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    updatePropertyMutation.mutate()
+                  }}
+                >
+                  <input
+                    value={propertyForm.title}
+                    onChange={(event) =>
+                      setPropertyForm((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                  />
+                  <input
+                    value={propertyForm.locationLabel}
+                    onChange={(event) =>
+                      setPropertyForm((current) => ({
+                        ...current,
+                        locationLabel: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                  />
+                  <input
+                    value={propertyForm.phone}
+                    onChange={(event) =>
+                      setPropertyForm((current) => ({
+                        ...current,
+                        phone: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                  />
+                  <input
+                    value={propertyForm.websiteUrl}
+                    onChange={(event) =>
+                      setPropertyForm((current) => ({
+                        ...current,
+                        websiteUrl: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                  />
+                  <textarea
+                    rows={5}
+                    value={propertyForm.description}
+                    onChange={(event) =>
+                      setPropertyForm((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-border/70 bg-card px-4 py-3"
+                  />
+                  <div className="flex flex-wrap gap-3">
+                    <Button type="submit" disabled={updatePropertyMutation.isPending}>
+                      {updatePropertyMutation.isPending ? 'Saving...' : 'Save changes'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditingProperty(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setPropertyForm({
+                        title: property.title,
+                        description: property.description,
+                        locationLabel: property.locationLabel,
+                        phone: property.phone,
+                        websiteUrl: property.websiteUrl ?? '',
+                      })
+                      setIsEditingProperty(true)
+                    }}
+                  >
+                    Edit listing
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (window.confirm(`Delete ${property.title}?`)) {
+                        deletePropertyMutation.mutate()
+                      }
+                    }}
+                  >
+                    <Trash2 className="size-4" />
+                    Delete listing
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : null}
+
           <div className="sticky top-8 rounded-[2rem] border border-border/70 bg-card/90 p-5 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.35)] backdrop-blur">
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-4">

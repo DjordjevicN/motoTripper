@@ -42,6 +42,11 @@ const HostListingCard = ({ listing, properties, users }: HostListingCardProps) =
               <div className="flex flex-wrap gap-2">
                 <Tag>{listing.status.replaceAll('-', ' ')}</Tag>
                 <Tag>{listing.unitCount} units</Tag>
+                {listing.isPaidPromotionActive ? (
+                  <Tag className="border-amber-500/35 bg-amber-500/10 text-amber-300">
+                    Paid {listing.paidPromotionPlan} promo
+                  </Tag>
+                ) : null}
                 {parkingTrust ? (
                   <Tag className="border-amber-500/30 bg-amber-500/10 text-amber-300">
                     {getParkingVerificationLabel(parkingTrust.verificationLevel)}
@@ -61,6 +66,11 @@ const HostListingCard = ({ listing, properties, users }: HostListingCardProps) =
               <p className="mt-2 text-2xl font-semibold">
                 {formatCurrency(listing.nightlyPrice)}
               </p>
+              {listing.isPaidPromotionActive && listing.paidPromotionUntil ? (
+                <p className="mt-2 text-xs text-amber-300">
+                  Promo until {new Date(listing.paidPromotionUntil).toLocaleDateString()}
+                </p>
+              ) : null}
             </div>
           </div>
 

@@ -1,6 +1,8 @@
 import { createBrowserRouter } from 'react-router-dom'
 
 import App from '@/App'
+import AdminPage from '@/pages/AdminPage'
+import AdminEditPropertyPage from '@/pages/AdminEditPropertyPage'
 import RequireAuth from '@/components/auth/RequireAuth'
 import CommunityPropertyOnboardingPage from './pages/CommunityPropertyOnboardingPage'
 import EditProfilePage from './pages/EditProfilePage'
@@ -28,6 +30,20 @@ export const router = createBrowserRouter([
       {
         path: 'landing',
         element: <LandingPage />,
+      },
+      {
+        path: 'admin',
+        element: <RequireAuth />,
+        children: [
+          {
+            index: true,
+            element: <AdminPage />,
+          },
+          {
+            path: 'properties/:propertyId/edit',
+            element: <AdminEditPropertyPage />,
+          },
+        ],
       },
       {
         path: 'community/onboarding',

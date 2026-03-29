@@ -7,6 +7,7 @@ const baseMockUsers: User[] = [
   {
     id: 'rider-current',
     name: 'Nikola D.',
+    email: 'nikola.dj.87@gmail.com',
     avatar: 'https://i.pravatar.cc/160?img=14',
     location: 'Belgrade, Serbia',
     bio: 'Mostly rides weekend escapes and multi-day Balkan loops. Cares most about secure overnight parking, easy late arrival, and a place to dry gear fast.',

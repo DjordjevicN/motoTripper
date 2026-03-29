@@ -34,10 +34,14 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
           tags: true,
           amenities: true,
           reviews: {
+            include: {
+              votes: true,
+            },
             orderBy: {
               createdAt: 'desc',
             },
           },
+          votes: true,
           parkingConfirmations: true,
           communityListing: true,
           hostListing: true,
@@ -56,6 +60,9 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
                 },
               },
               reviews: {
+                include: {
+                  votes: true,
+                },
                 orderBy: {
                   createdAt: 'desc',
                 },
@@ -64,13 +71,13 @@ export const bootstrapRoutes: FastifyPluginAsync = async (app) => {
           },
         },
       }),
-    ])
+    ] as const)
 
     return {
       currentUserId: 'rider-current',
       users: users.map(serializeUser),
-      properties: properties.map(serializeProperty),
-      hostListings: hostListings.map(serializeHostListing),
+      properties: (properties as any[]).map(serializeProperty),
+      hostListings: (hostListings as any[]).map(serializeHostListing),
     }
   })
 }

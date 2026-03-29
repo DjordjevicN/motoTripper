@@ -71,6 +71,17 @@ enum PlatformRole {
   ADMIN
 }
 
+enum PaidPromotionPlan {
+  WEEK
+  MONTH
+  YEAR
+}
+
+enum VoteValue {
+  UP
+  DOWN
+}
+
 model User {
   id                        String              @id @default(cuid())
   email                     String              @unique
@@ -86,6 +97,8 @@ model User {
   trustScore                Int                 @default(0)
   trustTier                 TrustTier           @default(UNVERIFIED)
   platformRole              PlatformRole        @default(RIDER)
+  isBanned                  Boolean             @default(false)
+  canLeaveReviews           Boolean             @default(true)
   xp                        Int?
   levelLabel                String?
   savedPropertyIds          String[]
@@ -97,6 +110,8 @@ model User {
   motorcycle                Motorcycle?
   reviews                   Review[]
   parkingConfirmations      ParkingConfirmation[]
+  propertyVotes             PropertyVote[]
+  reviewVotes               ReviewVote[]
   hostedListings            HostListing[]       @relation("HostListings")
   communitySubmittedListings CommunityListing[] @relation("CommunityListings")
 }
@@ -159,6 +174,8 @@ model Property {
   wifiNotes             String?
   listingSource         PropertyListingSource
   status                PropertyStatus        @default(DRAFT)
+  paidPromotionPlan     PaidPromotionPlan?
+  paidPromotionUntil    DateTime?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
   images                PropertyImage[]
@@ -166,6 +183,7 @@ model Property {
   amenities             PropertyAmenity[]
   reviews               Review[]
   parkingConfirmations  ParkingConfirmation[]
+  votes                 PropertyVote[]
   hostListing           HostListing?
   communityListing      CommunityListing?
 }
@@ -210,6 +228,7 @@ model Review {
   updatedAt               DateTime @updatedAt
   property                Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes                   ReviewVote[]
   parkingConfirmation     ParkingConfirmation?
 }
 
@@ -258,4 +277,30 @@ model CommunityListing {
   updatedAt          DateTime @updatedAt
   property           Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   submittedByUser    User     @relation("CommunityListings", fields: [submittedByUserId], references: [id], onDelete: Cascade)
+}
+
+model PropertyVote {
+  id         String    @id @default(cuid())
+  propertyId String
+  userId     String
+  value      VoteValue
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, userId])
+}
+
+model ReviewVote {
+  id        String    @id @default(cuid())
+  reviewId  String
+  userId    String
+  value     VoteValue
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  review    Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
 }

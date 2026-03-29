@@ -31,7 +31,7 @@ const enforcementRules = [
 
 const RulesPage = () => {
   return (
-    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
       <section className="overflow-hidden rounded-[2rem] border border-border/70 bg-card/90 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.45)]">
         <div className="border-b border-border/70 bg-gradient-to-br from-primary/16 via-background to-background p-8 sm:p-10">
           <div className="flex flex-wrap items-center gap-3">

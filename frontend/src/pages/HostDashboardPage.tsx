@@ -21,11 +21,11 @@ const HostDashboardPage = () => {
   )
 
   if (isLoading) {
-    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Loading host dashboard...</main>
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">Loading host dashboard...</main>
   }
 
   if (isError) {
-    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Could not load host dashboard.</main>
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">Could not load host dashboard.</main>
   }
 
   if (!authUser || !currentUser) {
@@ -50,7 +50,7 @@ const HostDashboardPage = () => {
   )
 
   return (
-    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/landing"

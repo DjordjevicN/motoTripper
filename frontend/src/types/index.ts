@@ -42,6 +42,13 @@ export type PreferredStopStyle =
   | 'secure-parking-first'
   | 'mixed'
 export type PropertyListingSource = 'official' | 'community'
+export type PaidPromotionPlan = 'week' | 'month' | 'year'
+export type VoteValue = 'up' | 'down'
+
+export type VoteRecord = {
+  userId: string
+  value?: VoteValue
+}
 
 export type PropertyReview = {
   id: string
@@ -53,10 +60,25 @@ export type PropertyReview = {
   content: string
   createdAt: string
   helpfulVotes: number
+  upvoteCount?: number
+  downvoteCount?: number
+  votes?: VoteRecord[]
   photos?: string[]
   safeParkingConfirmed?: boolean
   coveredParkingConfirmed?: boolean
   tripType: string
+}
+
+export type CreateReviewPayload = {
+  actorUserId: string
+  propertyId: string
+  title: string
+  content: string
+  rating: number
+  parkingSafetyRating: number
+  tripType: string
+  safeParkingConfirmed: boolean
+  coveredParkingConfirmed: boolean
 }
 
 export type User = {
@@ -83,6 +105,8 @@ export type User = {
   trustScore: number
   trustTier: TrustTier
   platformRole?: PlatformRole
+  isBanned?: boolean
+  canLeaveReviews?: boolean
   xp?: number
   level?: string
   typicalTripType?: TypicalTripType
@@ -97,10 +121,17 @@ export type Property = {
   id: string
   title: string
   listingSource: PropertyListingSource
+  paidPromotionPlan?: PaidPromotionPlan
+  paidPromotionUntil?: string
+  isPaidPromotionActive?: boolean
+  upvoteCount?: number
+  downvoteCount?: number
+  votes?: VoteRecord[]
   location: string
   locationLabel: string
   websiteUrl?: string
   submittedByUserId?: string
+  hostUserId?: string
   coordinates: Coordinates
   description: string
   image: string
@@ -276,6 +307,9 @@ export type HostPropertyListing = {
   status: 'live' | 'draft' | 'pending-review'
   nightlyPrice: number
   availableTonight: boolean
+  paidPromotionPlan?: PaidPromotionPlan
+  paidPromotionUntil?: string
+  isPaidPromotionActive?: boolean
   metrics: HostListingMetrics
   recentReviewIds: string[]
 }

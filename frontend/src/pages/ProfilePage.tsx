@@ -43,11 +43,11 @@ const ProfilePage = () => {
   )
 
   if (isLoading) {
-    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Loading rider profile...</main>
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">Loading rider profile...</main>
   }
 
   if (isError) {
-    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Could not load rider profile.</main>
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">Could not load rider profile.</main>
   }
 
   if (!targetUserId) {
@@ -72,7 +72,7 @@ const ProfilePage = () => {
   const motorcycle = resolvedUser.motorcycle
 
   return (
-    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
       <div className="mb-6">
         <Link
           to="/"
@@ -302,6 +302,14 @@ const ProfilePage = () => {
                     >
                       Add community-posted stay
                     </Link>
+                    {currentUser.platformRole === 'admin' ? (
+                      <Link
+                        to="/admin"
+                        className="inline-flex h-10 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 px-5 text-sm font-medium text-amber-200 transition-opacity hover:opacity-90"
+                      >
+                        Admin panel
+                      </Link>
+                    ) : null}
                     <button
                       type="button"
                       onClick={async () => {

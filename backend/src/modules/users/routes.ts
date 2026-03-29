@@ -49,6 +49,9 @@ const motorcycleTypeMap = {
   other: 'OTHER',
 } as const
 
+const parseActorUserId = (value: unknown) =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+
 export const userRoutes: FastifyPluginAsync = async (app) => {
   app.post('/', async (request, reply) => {
     if (!ensureDatabase(reply) || !prisma) {
@@ -238,5 +241,93 @@ export const userRoutes: FastifyPluginAsync = async (app) => {
     })
 
     return { item: serializeUser(updatedUser) }
+  })
+
+  app.patch('/:userId/moderation', async (request, reply) => {
+    if (!ensureDatabase(reply) || !prisma) {
+      return
+    }
+
+    const { userId } = request.params as { userId: string }
+    const body = request.body as {
+      actorUserId?: string
+      isBanned?: boolean
+      canLeaveReviews?: boolean
+    }
+
+    const actorUserId = parseActorUserId(body.actorUserId)
+
+    if (!actorUserId) {
+      return reply.code(400).send({ message: 'actorUserId is required.' })
+    }
+
+    const actor = await prisma.user.findUnique({
+      where: { id: actorUserId },
+      select: { id: true, platformRole: true },
+    })
+
+    if (!actor || actor.platformRole !== 'ADMIN') {
+      return reply.code(403).send({ message: 'Only admins can moderate users.' })
+    }
+
+    if (
+      typeof body.isBanned !== 'boolean' &&
+      typeof body.canLeaveReviews !== 'boolean'
+    ) {
+      return reply.code(400).send({
+        message: 'Provide isBanned and/or canLeaveReviews to update moderation.',
+      })
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(typeof body.isBanned === 'boolean'
+          ? { isBanned: body.isBanned }
+          : {}),
+        ...(typeof body.canLeaveReviews === 'boolean'
+          ? { canLeaveReviews: body.canLeaveReviews }
+          : {}),
+      },
+      include: {
+        riderProfile: true,
+        motorcycle: true,
+      },
+    })
+
+    return { item: serializeUser(updatedUser) }
+  })
+
+  app.delete('/:userId', async (request, reply) => {
+    if (!ensureDatabase(reply) || !prisma) {
+      return
+    }
+
+    const { userId } = request.params as { userId: string }
+    const { actorUserId } = request.query as { actorUserId?: string }
+    const normalizedActorId = parseActorUserId(actorUserId)
+
+    if (!normalizedActorId) {
+      return reply.code(400).send({ message: 'actorUserId is required.' })
+    }
+
+    const actor = await prisma.user.findUnique({
+      where: { id: normalizedActorId },
+      select: { id: true, platformRole: true },
+    })
+
+    if (!actor || actor.platformRole !== 'ADMIN') {
+      return reply.code(403).send({ message: 'Only admins can delete users.' })
+    }
+
+    if (actor.id === userId) {
+      return reply.code(400).send({ message: 'Admins cannot delete themselves.' })
+    }
+
+    await prisma.user.delete({
+      where: { id: userId },
+    })
+
+    return reply.code(204).send()
   })
 }

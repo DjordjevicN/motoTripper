@@ -159,7 +159,7 @@ const EditProfileFormContent = ({
   }
 
   return (
-    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <Link
           to={`/profile/${targetUserId}`}
@@ -402,7 +402,7 @@ const EditProfilePage = () => {
 
   if (isLoading) {
     return (
-      <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+      <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
         Loading profile editor...
       </main>
     )

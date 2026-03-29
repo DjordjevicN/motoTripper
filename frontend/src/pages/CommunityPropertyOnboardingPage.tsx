@@ -41,7 +41,7 @@ const CommunityPropertyOnboardingPage = () => {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
       <div className="mb-6">
         <Link
           to="/profile/rider-current"

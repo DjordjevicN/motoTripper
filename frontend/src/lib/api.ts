@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 
-import type { HostPropertyListing, Property, User } from '@/types'
+import type {
+  CreateReviewPayload,
+  HostPropertyListing,
+  PaidPromotionPlan,
+  Property,
+  PropertyReview,
+  User,
+  VoteValue,
+} from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000'
 
@@ -43,6 +51,20 @@ const sendJson = async <TResponse, TBody>(
   }
 
   return payload as TResponse
+}
+
+const sendWithoutBody = async (path: string, method: 'DELETE') => {
+  const response = await fetch(`${API_URL}${path}`, {
+    method,
+  })
+
+  const payload = (await response.json().catch(() => null)) as
+    | { message?: string }
+    | null
+
+  if (!response.ok) {
+    throw new Error(payload?.message ?? `Request failed for ${path}`)
+  }
 }
 
 export const getAppBootstrap = async () => {
@@ -90,6 +112,83 @@ export const updateUserProfile = async (
     payload,
   )
 }
+
+export const updateUserModeration = async (
+  userId: string,
+  payload: {
+    actorUserId: string
+    isBanned?: boolean
+    canLeaveReviews?: boolean
+  },
+) =>
+  sendJson<{ item: User }, typeof payload>(
+    `/api/users/${userId}/moderation`,
+    'PATCH',
+    payload,
+  )
+
+export const deleteUser = async (userId: string, actorUserId: string) =>
+  sendWithoutBody(`/api/users/${userId}?actorUserId=${actorUserId}`, 'DELETE')
+
+export const updateProperty = async (
+  propertyId: string,
+  payload: {
+    actorUserId: string
+    title: string
+    description: string
+    locationLabel: string
+    phone?: string
+    websiteUrl?: string
+    paidPromotionPlan?: PaidPromotionPlan | null
+  },
+) =>
+  sendJson<{ item: Property }, typeof payload>(
+    `/api/properties/${propertyId}`,
+    'PATCH',
+    payload,
+  )
+
+export const deleteProperty = async (propertyId: string, actorUserId: string) =>
+  sendWithoutBody(
+    `/api/properties/${propertyId}?actorUserId=${actorUserId}`,
+    'DELETE',
+  )
+
+export const createReview = async (payload: CreateReviewPayload) =>
+  sendJson<{ item: PropertyReview }, CreateReviewPayload>(
+    '/api/reviews',
+    'POST',
+    payload,
+  )
+
+export const deleteReview = async (reviewId: string, actorUserId: string) =>
+  sendWithoutBody(`/api/reviews/${reviewId}?actorUserId=${actorUserId}`, 'DELETE')
+
+export const voteForProperty = async (
+  propertyId: string,
+  payload: {
+    actorUserId: string
+    value: VoteValue
+  },
+) =>
+  sendJson<{ item: { propertyId: string; userId: string; value: VoteValue } }, typeof payload>(
+    `/api/properties/${propertyId}/vote`,
+    'POST',
+    payload,
+  )
+
+export const voteForReview = async (
+  reviewId: string,
+  payload: {
+    actorUserId: string
+    value: VoteValue
+  },
+) =>
+  sendJson<{ item: { reviewId: string; userId: string; value: VoteValue } }, typeof payload>(
+    `/api/reviews/${reviewId}/vote`,
+    'POST',
+    payload,
+  )
 
 export const useAppBootstrap = () =>
   useQuery({

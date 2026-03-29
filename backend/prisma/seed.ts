@@ -3,6 +3,7 @@ import {
   PrismaClient,
   PropertyListingSource,
   PropertyStatus,
+  VoteValue,
 } from '@prisma/client'
 
 import { mockHostListings } from '../../frontend/src/data/hosts/mockHostListings'
@@ -63,6 +64,8 @@ const hostListingMap = new Map(
 
 const seed = async () => {
   await prisma.parkingConfirmation.deleteMany()
+  await prisma.reviewVote.deleteMany()
+  await prisma.propertyVote.deleteMany()
   await prisma.review.deleteMany()
   await prisma.communityListing.deleteMany()
   await prisma.hostListing.deleteMany()
@@ -78,7 +81,7 @@ const seed = async () => {
     await prisma.user.create({
       data: {
         id: user.id,
-        email: `${user.id}@mototripper.local`,
+        email: user.email ?? `${user.id}@mototripper.local`,
         name: user.name,
         avatarUrl: user.avatar,
         bio: user.bio,
@@ -278,6 +281,57 @@ const seed = async () => {
         navigateClicks: listing.metrics.navigateClicks,
       },
     })
+  }
+
+  const seededProperties = await prisma.property.findMany({
+    include: {
+      reviews: true,
+    },
+    orderBy: {
+      createdAt: 'asc',
+    },
+  })
+
+  for (const property of seededProperties.slice(0, 4)) {
+    const candidateUsers = mockUsers.slice(0, 3)
+
+    for (const [index, user] of candidateUsers.entries()) {
+      await prisma.propertyVote.upsert({
+        where: {
+          propertyId_userId: {
+            propertyId: property.id,
+            userId: user.id,
+          },
+        },
+        update: {},
+        create: {
+          propertyId: property.id,
+          userId: user.id,
+          value: index === candidateUsers.length - 1 ? VoteValue.DOWN : VoteValue.UP,
+        },
+      })
+    }
+
+    for (const review of property.reviews.slice(0, 2)) {
+      const voters = mockUsers.filter((user) => user.id !== review.userId).slice(0, 2)
+
+      for (const [index, user] of voters.entries()) {
+        await prisma.reviewVote.upsert({
+          where: {
+            reviewId_userId: {
+              reviewId: review.id,
+              userId: user.id,
+            },
+          },
+          update: {},
+          create: {
+            reviewId: review.id,
+            userId: user.id,
+            value: index === 0 ? VoteValue.UP : VoteValue.DOWN,
+          },
+        })
+      }
+    }
   }
 }
 

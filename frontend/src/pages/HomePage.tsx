@@ -18,6 +18,16 @@ const EMPTY_USERS: User[] = []
 
 type SortMode = 'distance' | 'price-asc' | 'price-desc'
 
+const comparePromotionPriority = (
+  a: { property: Property },
+  b: { property: Property },
+) => {
+  const aPriority = a.property.isPaidPromotionActive ? 1 : 0
+  const bPriority = b.property.isPaidPromotionActive ? 1 : 0
+
+  return bPriority - aPriority
+}
+
 const defaultAdvancedFilters: PropertyFilters = {
   coveredParkingOnly: false,
   trailerFriendlyOnly: false,
@@ -123,6 +133,11 @@ const HomePage = () => {
         : true,
     )
     .sort((a, b) => {
+      const promotionPriority = comparePromotionPriority(a, b)
+      if (promotionPriority !== 0) {
+        return promotionPriority
+      }
+
       if (sortMode === 'price-asc') {
         return a.property.nightlyPrice - b.property.nightlyPrice
       }
@@ -142,15 +157,15 @@ const HomePage = () => {
         : 'Price high to low'
 
   if (isLoading) {
-    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Loading stays...</main>
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">Loading stays...</main>
   }
 
   if (isError) {
-    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">Could not load stays from the backend.</main>
+    return <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">Could not load stays from the backend.</main>
   }
 
   return (
-    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-none py-8">
+    <main className="mx-auto min-h-screen w-[calc(100%-40px)] max-w-[1600px] py-8">
       <section className="mb-6 rounded-[2rem] border border-amber-500/20 bg-gradient-to-r from-amber-500/12 via-background/95 to-background/95 p-6 shadow-[0_24px_70px_-40px_rgba(245,158,11,0.35)] backdrop-blur sm:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-3xl">

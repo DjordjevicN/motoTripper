@@ -60,7 +60,7 @@ const LoginPage = () => {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-[calc(100%-40px)] max-w-none items-center py-8">
+    <main className="mx-auto flex min-h-screen w-[calc(100%-40px)] max-w-[1600px] items-center py-8">
       <section className="grid w-full overflow-hidden rounded-[2rem] border border-border/70 bg-card/90 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.45)] lg:grid-cols-[0.95fr_1.05fr]">
         <div className="bg-gradient-to-br from-primary/18 via-background to-background p-8 sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">

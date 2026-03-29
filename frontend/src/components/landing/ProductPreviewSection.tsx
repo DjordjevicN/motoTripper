@@ -12,7 +12,13 @@ import { formatCurrency } from '@/lib/helper'
 
 const ProductPreviewSection = () => {
   const { data } = useAppBootstrap()
-  const previewProperties = (data?.properties ?? []).slice(0, 3)
+  const previewProperties = [...(data?.properties ?? [])]
+    .sort((a, b) => {
+      const aPriority = a.isPaidPromotionActive ? 1 : 0
+      const bPriority = b.isPaidPromotionActive ? 1 : 0
+      return bPriority - aPriority
+    })
+    .slice(0, 3)
   const users = data?.users ?? []
   const featuredRider = users.find((user) => user.id === 'rider-4') ?? users[0]
 
@@ -51,6 +57,11 @@ const ProductPreviewSection = () => {
                   />
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
+                      {property.isPaidPromotionActive ? (
+                        <Tag className="border-amber-500/35 bg-amber-500/10 text-amber-300">
+                          Promoted stay
+                        </Tag>
+                      ) : null}
                       <Tag
                         className={getParkingBadgeVariant(
                           parkingTrust.verificationLevel,
